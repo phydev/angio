@@ -1,0 +1,26 @@
+4.0, cell_radius
+100.0, diffusion_const
+1.00, interface_width
+0.30, vegf_p
+0.01, vegf_c
+20.0, diff_oxy_length
+6.25, vegf_rate 
+20.00, vegf_source_conc
+1.00, prolif_rate
+5.00, vessel_radius
+100000, total_time_step
+0.0005, dt
+1000.0, chi_chemiotactic_resp
+50, 50, 30, 1, 1, 1, Lx_Ly_Lz_dx_dy_dz
+db9, dir_name
+100000, random_seed
+20, number_of_boundary_points
+500, source_max
+0.01, vegf_grad_min
+0.03, vegf_max
+1.00, depletion_weight
+1000, output_period
+40000, extra_steps
+500, max_number_of_tip_cells
+T, thinning_FT
+F, periodic_FT
