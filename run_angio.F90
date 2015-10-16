@@ -129,7 +129,7 @@ module run_angio_m
       call spherical_surface(cell_radius, tip_s, np_tip_s, 0.2)  ! spherical surface increments of tip cell      
       call gen_cell_points(cell_radius, tip_all, np_tip_all)     ! all points of tip cell
 
-      ! initializing points for the vegf sources    
+      ! initializing points for the vegf sources 
       call spherical_surface(diff_oxy_length, vegf_s, np_vegf_s, 0.2)  
 
       ! initializing space matrices
@@ -245,7 +245,7 @@ module run_angio_m
             
             hs = heaviside(cell(ip)%phi)
             
-            if(cell(ip)%source.ne.1) then
+            if(cell(ip)%source<1) then
                cell(ip)%consumption = vegf_rate*cell(ip)%T*cell(ip)%phi*hs
                cell(ip)%T = cell(ip)%T + dt*(diffusion_const*cell(ip)%lapl_T - cell(ip)%consumption)
             end if
@@ -260,10 +260,11 @@ module run_angio_m
             call etc_move(cell, tipc, gg, lxyz, lxyz_inv, Lsize, vegf_c, vegf_grad_min, vegf_grad_max, tip_s, &
                   tip_all, n_tipcell, phi_max, nstep, dt, chi, cell_radius, np_tip_all, grid_cell_domain, n_source_initial,&
                   vegf_xyz, ndim, np_tip_s, np, periodic)
-
-            call source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic)
+           
          end if ! if n_tipcell > 0	 
-      
+
+         call source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic)
+
          call CPU_TIME(time_end)
 
          ctime = ctime + (time_end - time_init)
@@ -618,16 +619,18 @@ module run_angio_m
       logical, intent(in) :: periodic
       ! internal
       integer :: jdim
-      real, allocatable :: phi_boolean(:)
+      real, allocatable :: phi_boolean(:), tip_points(:)
       real :: grad_T, hs, temp_phi, temp, dx_vec(3), relative_pos(1:3), GG_projection, GG_rejection(1:3), grad(1:3),&
-           relative_image(3), unitary(3)
+           relative_image(3), unitary(3), abs_distance
       integer :: i, j, l, k, m, ip, ip2, sinal 
 
       unitary(:)=1
       ALLOCATE(phi_boolean(1:np))
-      
-      ! Deactivating tip cells and Proliferation
+      ALLOCATE(tip_points(1:np))
+      ! Deactivating tip cells
       phi_boolean(:) = cell(:)%phi
+      tip_points(:) = -1.d0
+
       ! deactivating tip cells
       
       do i=1, n_tipcell
@@ -636,6 +639,7 @@ module run_angio_m
          
          if(cell(ip)%T<vegf_c.or.grad_T<vegf_grad_min) then
             write(*,'(A,I10,I10)') "deactivated - n_tip, nstep:", n_tipcell-1, nstep
+            write(*,'(I10,I10,I10)') lxyz(ip,1:3) 
             tipc(i)%ip = tipc(n_tipcell)%ip
             tipc(i)%x = tipc(n_tipcell)%x
             tipc(i)%y = tipc(n_tipcell)%y
@@ -667,7 +671,9 @@ module run_angio_m
                end if
             end do
 
-            relative_pos(1:3) = relative_pos(1:3)/(sqrt(relative_pos(1)**2+ relative_pos(2)**2  + relative_pos(3)**2  )  )
+            abs_distance = sqrt(relative_pos(1)**2+ relative_pos(2)**2  + relative_pos(3)**2)
+
+            relative_pos(1:3) = relative_pos(1:3)/abs_distance
 
             GG_projection =  grad(1)*relative_pos(1) + grad(2)*relative_pos(2) + grad(3)*relative_pos(3)     
      
@@ -684,7 +690,7 @@ module run_angio_m
          grad_T = grad_T**(0.5)
 
 
-       !  if(grad_T<vegf_grad_min) grad_T = vegf_grad_min
+         if(grad_T<vegf_grad_min) grad_T = vegf_grad_min
 
          hs = heaviside(grad_T - vegf_grad_max)
          temp = 1.0 + (vegf_grad_max/grad_T - 1.0)*hs
@@ -756,14 +762,23 @@ module run_angio_m
                end if
       
             end if
-            cell(m)%T = cell(m)%T +  dt*cell(m)%consumption
+            
+            tip_points(m) = 1.0
             
          end do
 
+        
       end do
       
+      do ip=1, np
+         if(tip_points(ip)>0) then
+            cell(ip)%T = cell(ip)%T +  dt*cell(ip)%consumption
+         end if
+      end do
+
       DEALLOCATE(phi_boolean)    
-      
+      DEALLOCATE(tip_points)
+
     end subroutine etc_move
     
     
@@ -779,8 +794,8 @@ module run_angio_m
       integer, intent(inout) :: n_source
       logical, intent(in) :: periodic
       ! internal
-      integer :: n_source_o, sinal, r(3), i, j, ip, ip_source 
-      
+      integer :: n_source_o, sinal, r(3), i, j, ip, ip_source, temp(3)
+  !    integer :: remove_list
       ! deactivating vegf sources
       
       n_source_o = n_source
@@ -801,8 +816,13 @@ module run_angio_m
             if( cell(ip)%phi>0.d0) then
                
                cell(ip_source)%source = -1
+
+               temp(1:3) = vegf_xyz(i,1:3)
+               vegf_xyz(i,1:3) = vegf_xyz(n_source,1:3)
+               vegf_xyz(n_source,1:3) = temp(1:3)
+
                n_source = n_source - 1
-               
+
             end if
          end do
       end do
@@ -1204,7 +1224,7 @@ module run_angio_m
       call getlog(username) 
       write(*,'(A)') "                                Running Angio"
       write(*,'(A)') "       "
-      write(*,'(A)') "Version        :       4.0.s"
+      write(*,'(A)') "Version        :       4.1.s"
       write(*,'(A,A)') "Locate         :       ", trim(cwd)
       write(*,'(A,A)') "User           :       ", trim(username)
       write(*,'(A)') "Developer      :       Moreira, M."
