@@ -6,7 +6,7 @@ and consists in a phase-field model for tumor angiogenesis. The model is based o
 Stable version:
 - The hypoxic cells now has volume;
 - The system is modeled in three dimensions;
-- We have had implemented a thinning algorithm based on the work of [Palàgyi and Kuba](http://www.sciencedirect.com/science/article/pii/S0167865598000312);
+- We have had implemented a thinning algorithm proposed [Palàgyi and Kuba](http://www.sciencedirect.com/science/article/pii/S0167865598000312);
 
 
 Unstable and current working on:
