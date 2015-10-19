@@ -521,15 +521,15 @@ module thinning_m
      integer, intent(in):: np, lsize(1:3)
      real, allocatable, intent(inout) :: phis(:)
      integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:,:)
-     integer :: finish, skel
+     integer :: finish, skel, attempt
  
  
       skel = 1
-
+      attempt = 0
   
       do while(skel>0)
          finish = 0
-     
+         attempt = attempt + 1
          ! the order is important!
          call thinning(phis,3, finish, lxyz, lxyz_inv, lsize, np) 
          call thinning(phis,-3,finish, lxyz, lxyz_inv, lsize, np)
@@ -538,7 +538,7 @@ module thinning_m
          call thinning(phis,2, finish, lxyz, lxyz_inv, lsize, np)
          call thinning(phis,-2,finish, lxyz, lxyz_inv, lsize, np)
 
-         if(finish.eq.0) skel = -1
+         if(finish.eq.0.or.attempt.eq.1000) skel = -1
        end do
 
     end subroutine thinning_run
