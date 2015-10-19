@@ -161,8 +161,8 @@ module run_angio_m
       ! use on your own risk!
       ! write(*,'(A)') "Loading previous system..."
       ! file_id = ' 73000'
-      !                     field, ...,   ..., directory, ...
-      ! call init_from_file(cell, lxyz_inv, np, 'db6',file_id)
+      !                     field, ...,    ..., ... , directory, ...
+      ! call init_from_file(cell, lxyz_inv, np, np_phi, 'db6' ,  file_id)
 
 
       write(*,'(A)') "Initiating the core program..."      
@@ -332,39 +332,44 @@ module run_angio_m
       end do
       
 
-      OPEN (UNIT=10,FILE=trim(dir_name//'/phi.xyz'))
-      OPEN (UNIT=20,FILE=trim(dir_name//'/t.xyz'))
+      OPEN (UNIT=333,FILE=trim(dir_name//'/phi.xyz'))
+      OPEN (UNIT=222,FILE=trim(dir_name//'/t.xyz'))
       do ip=1, np
          if(cell(ip)%phi>0.d0) then
-            write(10,'(I10,I10,I10,F10.2)') lxyz(ip,1:3), cell(ip)%phi
+            write(333,'(I10,I10,I10,F10.2)') lxyz(ip,1:3), cell(ip)%phi
          end if
-         write(20,'(I10,I10,I10,F10.2)') lxyz(ip,1:3), cell(ip)%T
+         write(222,'(I10,I10,I10,F10.2)') lxyz(ip,1:3), cell(ip)%T
       end do
-      close(10)
-      close(20)
+      close(333)
+      close(222)
       
       
       DEALLOCATE(lxyz)
       DEALLOCATE(lxyz_inv)
       DEALLOCATE(cell)
       DEALLOCATE(tipc)
+      DEALLOCATE(necrotic_tissue)
       DEALLOCATE(vegf_xyz)
       DEALLOCATE(gg)
       DEALLOCATE(lapl)
+      DEALLOCATE(f)
       DEALLOCATE(phis)
-      DEALLOCATE(grid_cell_domain)
       DEALLOCATE(vegf_s)
       DEALLOCATE(tip_s)
       DEALLOCATE(tip_all)
+      DEALLOCATE(grid_cell_domain)
+      
+     
+      
     end subroutine run_angio
 
 
-    subroutine init_from_file(cell, lxyz_inv, np, dir_name, file_id)
+    subroutine init_from_file(cell, lxyz_inv, np, np_phi, dir_name, file_id)
 
       implicit none
       ! external
       type(mesh_t), allocatable, intent(inout) :: cell(:)
-      integer, intent(in) :: np
+      integer, intent(in) :: np, np_phi
       integer, allocatable, intent(in) :: lxyz_inv(:,:,:)
       character(3), intent(in) :: dir_name
       character(10), intent(in) :: file_id
@@ -379,7 +384,7 @@ module run_angio_m
          read(200,*) r(1:3), cell(ip)%T
       end do
 
-      do ip=1, 265251
+      do ip=1, np_phi
          read(100,*) r(1:3), phi_temp
 
          cell(lxyz_inv(r(1),r(2),r(3) ) )%phi = phi_temp
