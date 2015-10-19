@@ -8,8 +8,12 @@ Stable version:
 - The system is modeled in three dimensions;
 - We have had implemented a thinning algorithm based on the work of [Palàgyi and Kuba](http://www.sciencedirect.com/science/article/pii/S0167865598000312);
 
+
 Unstable and current working on:
 - Coupling blood flow and the hypoxic cell deactivation;
 
 Next features:
 - A routine to count the branches and the volume of the vessels;
+
+
+![alt tag](https://moreirasm.files.wordpress.com/2015/04/vegf_evol.png?w=640&h=420)
