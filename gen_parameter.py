@@ -62,8 +62,8 @@ if(alpha_p_of):
 
 if(chi_of):
 
-    filename = 'inp'+counters
-    dir_name = 'dir'+counters
+    counters = '00'
+    counteri = 0
 
     chi = chi_min
 
