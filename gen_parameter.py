@@ -62,6 +62,9 @@ if(alpha_p_of):
 
 if(chi_of):
 
+    filename = 'inp'+counters
+    dir_name = 'dir'+counters
+
     chi = chi_min
 
     while chi <= chi_max:
