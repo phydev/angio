@@ -20,9 +20,11 @@ program main
 
   if(rank<10) then
      write(n2s1,'(I1)')rank
+     input = 'inp0'//n2s1
      dir = 'dir0'//n2s1     
   else
      write(n2s2,'(I2)') rank
+     input = 'inp'//n2s2
      dir = 'dir'//n2s2
   end if
 
@@ -31,7 +33,7 @@ program main
   call MPI_BARRIER(mpi_comm_world, ierr)
 
 
-!  call run_angio(input)
+  call run_angio(input)
  
   
 

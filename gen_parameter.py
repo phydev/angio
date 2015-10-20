@@ -19,6 +19,7 @@ if(alpha_p_of):
     while alpha_p<=alpha_p_max:
 
         filename = 'inp'+counters
+        dir_name = 'dir'+counters
 
         file = open(filename, 'w')
 
@@ -36,7 +37,7 @@ if(alpha_p_of):
         file.write('0.0005, dt \n')
         file.write('1000.0, chi_chemiotactic_resp \n')
         file.write('80, 80, 50, 1, 1, 1, Lx_Ly_Lz_dx_dy_dz \n')
-        file.write('db9, dir_name \n')
+        file.write(dir_name+', dir_name \n')
         file.write('100000, random_seed \n')
         file.write('20, number_of_boundary_points \n')
         file.write('500, source_max \n')

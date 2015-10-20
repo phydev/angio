@@ -46,16 +46,18 @@ module run_angio_m
   
   contains
   
-    subroutine run_angio()
+    subroutine run_angio(input)
 
       implicit none
-      
+
+      ! input/output
+      character(len=5), intent(in) :: input
+      character(len=5) :: dir_name 
       
       ! begin parameters
       real :: cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length, vegf_rate, &
            vegf_source_conc, prolif_rate, vessel_radius, dt, chi, vegf_grad_min, vegf_grad_max
       integer :: tstep, iseed, dr(3)
-      character(len=3) :: dir_name 
       character(len=10) :: file_name, file_id
       real :: notch_distance, depletion_weight
       ! mesh variables
@@ -88,7 +90,7 @@ module run_angio_m
       real :: phi_med, t_med
 
       ! initializing parameters
-      call  parameters_init(cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length,&
+      call  parameters_init(input, cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length,&
       vegf_rate, vegf_source_conc, prolif_rate, vessel_radius, tstep, dt, chi, Lsize, dr, dir_name, iseed,&
       boundary_points, source_max, vegf_grad_min, vegf_grad_max, depletion_weight, output_period, extra_steps, &
       n_max_tipc, thinning, periodic)
@@ -371,7 +373,7 @@ module run_angio_m
       type(mesh_t), allocatable, intent(inout) :: cell(:)
       integer, intent(in) :: np, np_phi
       integer, allocatable, intent(in) :: lxyz_inv(:,:,:)
-      character(3), intent(in) :: dir_name
+      character(5), intent(in) :: dir_name
       character(10), intent(in) :: file_id
       ! private
       integer :: r(3), ip
@@ -431,7 +433,7 @@ module run_angio_m
       integer,allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:,:)
       integer, intent(in) :: nstep, np, dr(3)
       real, intent(in) :: interface_width, dt
-      character(len=3), intent(in) :: dir_name
+      character(len=5), intent(in) :: dir_name
       ! internal variables
       real, allocatable :: f(:), lapl(:)
       real, allocatable :: mu(:)
@@ -1132,22 +1134,25 @@ module run_angio_m
     end subroutine space_init
     
     
-    subroutine parameters_init(cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length,&
+    subroutine parameters_init(input, cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length,&
          vegf_rate, vegf_source_conc, prolif_rate, vessel_radius, tstep, dt, chi, Lsize, dr, dir_name, iseed,&
          boundary_points, source_max, vegf_grad_min, vegf_grad_max, depletion_weight, output_period, extra_steps, &
          n_max_tipc, thinning,periodic)
       
       implicit none 
       
+      
+      character(len=5), intent(in) :: input
+      
       real, intent(inout) :: cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length, vegf_rate, &
            vegf_source_conc, prolif_rate, vessel_radius, dt, chi, vegf_grad_min, vegf_grad_max, depletion_weight
       integer, intent(inout) :: tstep, Lsize(3), iseed, boundary_points, source_max, dr(3), output_period, n_max_tipc, &
            extra_steps
-      character(len=3), intent(inout) :: dir_name
+      character(len=5), intent(inout) :: dir_name
       character(len=255) :: temp
       logical :: periodic, thinning
       
-      OPEN (UNIT=1,FILE='input_file')
+      OPEN (UNIT=1,FILE=input)
       read(1,'(F10.2,A)') cell_radius, temp ! R_c - Cell Radius
       read(1,'(F10.2,A)') diffusion_const, temp ! D - Ang. Fac. Diffusion Constant
       read(1,'(F10.2,A)') interface_width, temp ! Eps - Interface Witdh
@@ -1216,7 +1221,7 @@ module run_angio_m
       character(8)  :: date
       character(10) :: time
       character(5)  :: zone
-      character(3)  :: dir_name
+      character(5)  :: dir_name
       integer, dimension(8) :: values
       logical :: periodic
 
