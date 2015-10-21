@@ -195,7 +195,7 @@ module run_angio_m
          end if
          
        
-         call CPU_TIME(time_init)
+         time_init = MPI_WTIME()
  
          ! calculating gradient of vegf
          call dderivatives_grad(cell, gg, np, lxyz, lxyz_inv, dr)
@@ -268,8 +268,7 @@ module run_angio_m
 
          call source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic)
 
-         call CPU_TIME(time_end)
-
+         time_end = MPI_WTIME() 
          ctime = ctime + (time_end - time_init)
          
          if(nstep.eq.100) then
@@ -293,7 +292,7 @@ module run_angio_m
          end if
 
          if(counter.eq.output_period) then
-            write(*,*) nstep
+            write(*,*) nstep, rank
             counter = 0
 
             if(thinning) then
@@ -597,8 +596,8 @@ module run_angio_m
       
       if(activated) then
          n_tipcell = n_tipcell + 1
-         write(*,'(A,I10,I10)') "activated - n_tip, nstep:", n_tipcell, nstep
-         write(*,'(I10,I10,I10)') lxyz(tipc(n_tipcell)%ip,1:3)
+         !write(*,'(A,I10,I10)') "activated - n_tip, nstep:", n_tipcell, nstep
+         !write(*,'(I10,I10,I10)') lxyz(tipc(n_tipcell)%ip,1:3)
          if(n_tipcell.eq.n_max_tipc) then
             write(*,'(A)') "WARNING: Reached the maximum number of ETCs. The program will be terminated to avoid SEGFAULT."
             write(*,'(A)') "The last state of the system will be saved."
@@ -646,8 +645,8 @@ module run_angio_m
          grad_T = gg(ip,1)*gg(ip,1) + gg(ip,2)*gg(ip,2) + gg(ip,3)*gg(ip,3)
          
          if(cell(ip)%T<vegf_c.or.grad_T<vegf_grad_min) then
-            write(*,'(A,I10,I10)') "deactivated - n_tip, nstep:", n_tipcell-1, nstep
-            write(*,'(I10,I10,I10)') lxyz(ip,1:3) 
+            !write(*,'(A,I10,I10)') "deactivated - n_tip, nstep:", n_tipcell-1, nstep
+            !write(*,'(I10,I10,I10)') lxyz(ip,1:3) 
             tipc(i)%ip = tipc(n_tipcell)%ip
             tipc(i)%x = tipc(n_tipcell)%x
             tipc(i)%y = tipc(n_tipcell)%y
