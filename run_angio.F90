@@ -1169,7 +1169,7 @@ module run_angio_m
       read(500+10*rank,'(F10.2,A)') chi, temp ! chi - Chemotaxis
       read(500+10*rank,'(I10, I10, I10, I10, I10, I10,A)') Lsize(1:3), dr(1:3), temp !Box Length - x,y,z, dr
       read(500+10*rank,'(A,A)') dir_name, temp ! Simulation name 
-      read(500+10*rank,'(I100,A)') iseed, temp ! Initial Seed for RAN2
+      read(500+10*rank,'(I10,A)') iseed, temp ! Initial Seed for RAN2
       read(500+10*rank,'(I10,A)') boundary_points, temp ! boundary points
       read(500+10*rank,'(I10,A)') source_max, temp ! max number of vegf sources
       read(500+10*rank,'(F10.2,A)') vegf_grad_min, temp ! minimum vegf gadient for branching
@@ -1197,7 +1197,7 @@ module run_angio_m
       write(150+10*rank,'(F10.2,A)') chi, " chi" ! chi - Chemotaxis
       write(150+10*rank,'(I10, I10, I10, I10, I10, I10,A)') Lsize(1:3), dr(1:3), " box_length_xyz_dr" !Box Length - x,y,z, dr
       write(150+10*rank,'(A,A)') dir_name, " dir_name" ! Simulation name 
-      write(150+10*rank,'(I100,A)') iseed, " iseed" ! Initial Seed for RAN2
+      write(150+10*rank,'(I10,A)') iseed, " iseed" ! Initial Seed for RAN2
       write(150+10*rank,'(I10,A)') boundary_points, " bounary_points"! boundary points
       write(150+10*rank,'(I10,A)') source_max, " source_max" ! max number of vegf sources
       write(150+10*rank,'(F10.2,A)') vegf_grad_min, " vegf_grad_min" ! minimum vegf gadient for branching
