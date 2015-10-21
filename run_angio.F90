@@ -46,14 +46,15 @@ module run_angio_m
   
   contains
   
-    subroutine run_angio(input)
+    subroutine run_angio(input, rank)
 
       implicit none
 
       ! input/output
       character(len=5), intent(in) :: input
       character(len=5) :: dir_name 
-      
+      integer, intent(in) :: rank
+	  
       ! begin parameters
       real :: cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length, vegf_rate, &
            vegf_source_conc, prolif_rate, vessel_radius, dt, chi, vegf_grad_min, vegf_grad_max
@@ -93,7 +94,7 @@ module run_angio_m
       call  parameters_init(input, cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length,&
       vegf_rate, vegf_source_conc, prolif_rate, vessel_radius, tstep, dt, chi, Lsize, dr, dir_name, iseed,&
       boundary_points, source_max, vegf_grad_min, vegf_grad_max, depletion_weight, output_period, extra_steps, &
-      n_max_tipc, thinning, periodic)
+      n_max_tipc, thinning, rank, periodic)
 
 	
       ! notch distance
@@ -1137,13 +1138,13 @@ module run_angio_m
     subroutine parameters_init(input, cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length,&
          vegf_rate, vegf_source_conc, prolif_rate, vessel_radius, tstep, dt, chi, Lsize, dr, dir_name, iseed,&
          boundary_points, source_max, vegf_grad_min, vegf_grad_max, depletion_weight, output_period, extra_steps, &
-         n_max_tipc, thinning,periodic)
+         n_max_tipc, thinning, rank, periodic)
       
       implicit none 
       
       
       character(len=5), intent(in) :: input
-      
+      integer, intent(in) :: rank
       real, intent(inout) :: cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length, vegf_rate, &
            vegf_source_conc, prolif_rate, vessel_radius, dt, chi, vegf_grad_min, vegf_grad_max, depletion_weight
       integer, intent(inout) :: tstep, Lsize(3), iseed, boundary_points, source_max, dr(3), output_period, n_max_tipc, &
@@ -1152,62 +1153,62 @@ module run_angio_m
       character(len=255) :: temp
       logical :: periodic, thinning
       
-      OPEN (UNIT=1,FILE=input)
-      read(1,'(F10.2,A)') cell_radius, temp ! R_c - Cell Radius
-      read(1,'(F10.2,A)') diffusion_const, temp ! D - Ang. Fac. Diffusion Constant
-      read(1,'(F10.2,A)') interface_width, temp ! Eps - Interface Witdh
-      read(1,'(F10.2,A)') vegf_p, temp ! T_p - Ang. fac. conc. for highest proliferation
-      read(1,'(F10.3,A)') vegf_c, temp ! T_c - Critical Ang. Fac. for branching
-      read(1,'(F10.2,A)') diff_oxy_length, temp ! diff_oxy - Min. Oxygen Diffusion Radius
-      read(1,'(F10.2,A)') vegf_rate, temp ! alpha_T - Ang. Fac. Consumption Rate
-      read(1,'(F10.2,A)') vegf_source_conc, temp ! Ts - Ang. Fac. on the source
-      read(1,'(F10.2,A)') prolif_rate, temp ! Alphap - Proliferation rate
-      read(1,'(F10.2,A)') vessel_radius, temp ! radius - Initial Vessel Radius
-      read(1,'(I10,A)')   tstep, temp ! tstep - Total time step
-      read(1,'(F10.5,A)') dt, temp ! dt - Time increment
-      read(1,'(F10.2,A)') chi, temp ! chi - Chemotaxis
-      read(1,'(I10, I10, I10, I10, I10, I10,A)') Lsize(1:3), dr(1:3), temp !Box Length - x,y,z, dr
-      read(1,'(A,A)') dir_name, temp ! Simulation name 
-      read(1,'(I10,A)') iseed, temp ! Initial Seed for RAN2
-      read(1,'(I10,A)') boundary_points, temp ! boundary points
-      read(1,'(I10,A)') source_max, temp ! max number of vegf sources
-      read(1,'(F10.2,A)') vegf_grad_min, temp ! minimum vegf gadient for branching
-      read(1,'(F10.2,A)') vegf_grad_max, temp ! vegf for max velocity
-      read(1,'(F10.2,A)') depletion_weight, temp ! repulsive force coefficient
-      read(1,'(I10,A)') output_period, temp ! the period which the data will be written to the output
-      read(1,'(I10,A)') extra_steps, temp ! number of extra steps after the desactivation of all hypoxic cells
-      read(1,'(I10,A)') n_max_tipc, temp ! max number of tip cells
-      read(1,'(L1,A)') thinning, temp ! thinning on/off
-      read(1,'(L1,A) ') periodic, temp ! boundary conditions
-      CLOSE(1)
-      OPEN (UNIT=2,FILE=dir_name//'/parameters'//dir_name//'.init')
-      write(2,'(F10.2,A)') cell_radius, " cell_radius" ! R_c - Cell Radius
-      write(2,'(F10.2,A)') diffusion_const, " diffusion_const" ! D - Ang. Fac. Diffusion Constant
-      write(2,'(F10.2,A)') interface_width, " interface_width" ! Eps - Interface Witdh
-      write(2,'(F10.2,A)') vegf_p, " vegf_p" ! T_p - Ang. fac. conc. for highest proliferation
-      write(2,'(F10.3,A)') vegf_c,  " vegf_c" ! T_c - Critical Ang. Fac. for branching
-      write(2,'(F10.2,A)') diff_oxy_length, " diff_oxy_length" ! diff_oxy - Min. Oxygen Diffusion Radius
-      write(2,'(F10.2,A)') vegf_rate, " alpha_T" ! alpha_T - Ang. Fac. Consumption Rate
-      write(2,'(F10.2,A)') vegf_source_conc, " vegf_source_conc" ! Ts - Ang. Fac. on the source
-      write(2,'(F10.2,A)') prolif_rate, " prolif_rate" ! Alphap - Proliferation rate
-      write(2,'(F10.2,A)') vessel_radius, " vessel_radius" ! radius - Initial Vessel Radius
-      write(2,'(I10,A)')   tstep, " tstep" ! tstep - Total time step
-      write(2,'(F10.5,A)') dt, " dt" ! dt - Time increment
-      write(2,'(F10.2,A)') chi, " chi" ! chi - Chemotaxis
-      write(2,'(I3, I3, I3, I3, I3, I3,A)') Lsize(1:3), dr(1:3), " box_length_xyz_dr" !Box Length - x,y,z, dr
-      write(2,'(A,A)') dir_name, " dir_name" ! Simulation name 
-      write(2,'(I10,A)') iseed, " iseed" ! Initial Seed for RAN2
-      write(2,'(I10,A)') boundary_points, " bounary_points"! boundary points
-      write(2,'(I10,A)') source_max, " source_max" ! max number of vegf sources
-      write(2,'(F10.2,A)') vegf_grad_min, " vegf_grad_min" ! minimum vegf gadient for branching
-      write(2,'(F10.2,A)') vegf_grad_max, " vegf_grad_max" ! vegf for max velocity
-      write(2,'(F10.2,A)') depletion_weight, " depletion_weight" ! repulsive force coefficient
-      write(2,'(I10,A)') output_period, " output_period" ! the period which the data will be written to the output
-      write(2,'(I10,A)') extra_steps, " extra_steps"
-      write(2,'(I10,A)') n_max_tipc, " n_max_tipc" ! max number of tip cells
-      write(2,'(L1,A)') thinning, " thinning" ! thinning on/off
-      write(2,'(L1,A) ') periodic, " periodic" ! boundary conditions
-      CLOSE(2)      
+      OPEN (UNIT=500+10*rank,FILE=input)
+      read(500+10*rank,'(F10.2,A)') cell_radius, temp ! R_c - Cell Radius
+      read(500+10*rank,'(F10.2,A)') diffusion_const, temp ! D - Ang. Fac. Diffusion Constant
+      read(500+10*rank,'(F10.2,A)') interface_width, temp ! Eps - Interface Witdh
+      read(500+10*rank,'(F10.2,A)') vegf_p, temp ! T_p - Ang. fac. conc. for highest proliferation
+      read(500+10*rank,'(F10.3,A)') vegf_c, temp ! T_c - Critical Ang. Fac. for branching
+      read(500+10*rank,'(F10.2,A)') diff_oxy_length, temp ! diff_oxy - Min. Oxygen Diffusion Radius
+      read(500+10*rank,'(F10.2,A)') vegf_rate, temp ! alpha_T - Ang. Fac. Consumption Rate
+      read(500+10*rank,'(F10.2,A)') vegf_source_conc, temp ! Ts - Ang. Fac. on the source
+      read(500+10*rank,'(F10.2,A)') prolif_rate, temp ! Alphap - Proliferation rate
+      read(500+10*rank,'(F10.2,A)') vessel_radius, temp ! radius - Initial Vessel Radius
+      read(500+10*rank,'(I10,A)')   tstep, temp ! tstep - Total time step
+      read(500+10*rank,'(F10.5,A)') dt, temp ! dt - Time increment
+      read(500+10*rank,'(F10.2,A)') chi, temp ! chi - Chemotaxis
+      read(500+10*rank,'(I10, I10, I10, I10, I10, I10,A)') Lsize(1:3), dr(1:3), temp !Box Length - x,y,z, dr
+      read(500+10*rank,'(A,A)') dir_name, temp ! Simulation name 
+      read(500+10*rank,'(I100,A)') iseed, temp ! Initial Seed for RAN2
+      read(500+10*rank,'(I10,A)') boundary_points, temp ! boundary points
+      read(500+10*rank,'(I10,A)') source_max, temp ! max number of vegf sources
+      read(500+10*rank,'(F10.2,A)') vegf_grad_min, temp ! minimum vegf gadient for branching
+      read(500+10*rank,'(F10.2,A)') vegf_grad_max, temp ! vegf for max velocity
+      read(500+10*rank,'(F10.2,A)') depletion_weight, temp ! repulsive force coefficient
+      read(500+10*rank,'(I10,A)') output_period, temp ! the period which the data will be written to the output
+      read(500+10*rank,'(I10,A)') extra_steps, temp ! number of extra steps after the desactivation of all hypoxic cells
+      read(500+10*rank,'(I10,A)') n_max_tipc, temp ! max number of tip cells
+      read(500+10*rank,'(L1,A)') thinning, temp ! thinning on/off
+      read(500+10*rank,'(L1,A) ') periodic, temp ! boundary conditions
+      CLOSE(50+10*rank)
+      OPEN (UNIT=150+10*rank,FILE=dir_name//'/parameters'//dir_name//'.init')
+      write(150+10*rank,'(F10.2,A)') cell_radius, " cell_radius" ! R_c - Cell Radius
+      write(150+10*rank,'(F10.2,A)') diffusion_const, " diffusion_const" ! D - Ang. Fac. Diffusion Constant
+      write(150+10*rank,'(F10.2,A)') interface_width, " interface_width" ! Eps - Interface Witdh
+      write(150+10*rank,'(F10.2,A)') vegf_p, " vegf_p" ! T_p - Ang. fac. conc. for highest proliferation
+      write(150+10*rank,'(F10.3,A)') vegf_c,  " vegf_c" ! T_c - Critical Ang. Fac. for branching
+      write(150+10*rank,'(F10.2,A)') diff_oxy_length, " diff_oxy_length" ! diff_oxy - Min. Oxygen Diffusion Radius
+      write(150+10*rank,'(F10.2,A)') vegf_rate, " alpha_T" ! alpha_T - Ang. Fac. Consumption Rate
+      write(150+10*rank,'(F10.2,A)') vegf_source_conc, " vegf_source_conc" ! Ts - Ang. Fac. on the source
+      write(150+10*rank,'(F10.2,A)') prolif_rate, " prolif_rate" ! Alphap - Proliferation rate
+      write(150+10*rank,'(F10.2,A)') vessel_radius, " vessel_radius" ! radius - Initial Vessel Radius
+      write(150+10*rank,'(I10,A)')   tstep, " tstep" ! tstep - Total time step
+      write(150+10*rank,'(F10.5,A)') dt, " dt" ! dt - Time increment
+      write(150+10*rank,'(F10.2,A)') chi, " chi" ! chi - Chemotaxis
+      write(150+10*rank,'(I10, I10, I10, I10, I10, I10,A)') Lsize(1:3), dr(1:3), " box_length_xyz_dr" !Box Length - x,y,z, dr
+      write(150+10*rank,'(A,A)') dir_name, " dir_name" ! Simulation name 
+      write(150+10*rank,'(I100,A)') iseed, " iseed" ! Initial Seed for RAN2
+      write(150+10*rank,'(I10,A)') boundary_points, " bounary_points"! boundary points
+      write(150+10*rank,'(I10,A)') source_max, " source_max" ! max number of vegf sources
+      write(150+10*rank,'(F10.2,A)') vegf_grad_min, " vegf_grad_min" ! minimum vegf gadient for branching
+      write(150+10*rank,'(F10.2,A)') vegf_grad_max, " vegf_grad_max" ! vegf for max velocity
+      write(150+10*rank,'(F10.2,A)') depletion_weight, " depletion_weight" ! repulsive force coefficient
+      write(150+10*rank,'(I10,A)') output_period, " output_period" ! the period which the data will be written to the output
+      write(150+10*rank,'(I10,A)') extra_steps, " extra_steps"
+      write(150+10*rank,'(I10,A)') n_max_tipc, " n_max_tipc" ! max number of tip cells
+      write(150+10*rank,'(L1,A)') thinning, " thinning" ! thinning on/off
+      write(150+10*rank,'(L1,A) ') periodic, " periodic" ! boundary conditions
+      CLOSE(150+10*rank)      
     end subroutine parameters_init
     
 

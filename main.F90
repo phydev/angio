@@ -33,7 +33,7 @@ program main
   call MPI_BARRIER(mpi_comm_world, ierr)
 
 
-  call run_angio(input)
+  call run_angio(input, rank)
  
   
 
