@@ -20,7 +20,7 @@
 module run_angio_m  
 
   use thinning_m
- 
+  use mpi
   
   implicit none
   
