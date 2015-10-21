@@ -1234,7 +1234,7 @@ module run_angio_m
       call getlog(username) 
       write(*,'(A)') "                                Running Angio"
       write(*,'(A)') "       "
-      write(*,'(A)') "Version        :       4.1.s"
+      write(*,'(A)') "Version        :       4.1.s - MPI"
       write(*,'(A,A)') "Locate         :       ", trim(cwd)
       write(*,'(A,A)') "User           :       ", trim(username)
       write(*,'(A)') "Developer      :       Moreira, M."
