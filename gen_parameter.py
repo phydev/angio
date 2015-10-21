@@ -6,7 +6,7 @@ alpha_p_of = False
 chi_of = True
 
 alpha_p_min, alpha_p_max, delta_alpha_p = 0.1, 3.0, 0.2
-chi_min, chi_max, delta_chi = 200, 2000, 100
+chi_min, chi_max, delta_chi = 100.0, 2000.0, 200.0
 
 
 
@@ -35,8 +35,8 @@ if(alpha_p_of):
         file.write('5.00, vessel_radius \n')
         file.write('150000, total_time_step \n')
         file.write('0.0005, dt \n')
-        file.write('1000.0, chi_chemiotactic_resp \n')
-        file.write('80, 80, 50, 1, 1, 1, Lx_Ly_Lz_dx_dy_dz \n')
+        file.write('800.0, chi_chemiotactic_resp \n')
+        file.write('100, 100, 50, 1, 1, 1, Lx_Ly_Lz_dx_dy_dz \n')
         file.write(dir_name+', dir_name \n')
         file.write('100000, random_seed \n')
         file.write('20, number_of_boundary_points \n')
@@ -62,10 +62,10 @@ if(alpha_p_of):
 
 if(chi_of):
 
-    counters = '00'
-    counteri = 0
+    counters = '10'
+    counteri = 10
 
-    chi = chi_min
+    chi = 1.0*chi_min
 
     while chi <= chi_max:
 
@@ -82,14 +82,14 @@ if(chi_of):
         file.write('20.0, diff_oxy_length \n')
         file.write('6.25, vegf_rate \n')
         file.write('1.00, vegf_source_conc \n')
-        file.write('1.0, prolif_rate \n')
+        file.write('1.00, prolif_rate \n')
         file.write('5.00, vessel_radius \n')
         file.write('150000, total_time_step \n')
         file.write('0.0005, dt \n')
         file.write(str(chi)+', chi_chemiotactic_resp \n')
-        file.write('80, 80, 50, 1, 1, 1, Lx_Ly_Lz_dx_dy_dz \n')
+        file.write('100, 100, 50, 1, 1, 1, Lx_Ly_Lz_dx_dy_dz \n')
         file.write(dir_name+', dir_name \n')
-        file.write('100000, random_seed \n')
+        file.write('66785754552, random_seed \n')
         file.write('20, number_of_boundary_points \n')
         file.write('500, source_max \n')
         file.write('0.01, vegf_grad_min \n')
@@ -101,7 +101,7 @@ if(chi_of):
         file.write('T, thinning_FT \n')
         file.write('F, periodic_FT \n')
         
-        chi += delta_chi         
+        chi += 1.0*delta_chi         
         
         counteri += 1
 
