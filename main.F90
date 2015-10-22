@@ -35,6 +35,7 @@ program main
 
   call run_angio(input, rank)
  
+  call MPI_FINALIZE(ierr)
   
 
 end program main
