@@ -256,8 +256,6 @@ contains
           end do ! do while found 
 
 
-          !do connects=1, nodes_connecteds
-
           do i=1, path_length_v(n)
 
              ! ip, m
@@ -270,11 +268,83 @@ contains
 
        end do ! np_path 
 
-
-
     end do ! np_nodes
 
+    
+    integer ::  vertex(:,:), vertex_full(:,:), vertex_vector(:), multiplier_vector(:), cluster(:,:)
+    real :: distance(3), distance_abs
 
+    ALLOCATE(vertex(1:np_nodes,1:np_nodes) )
+    ALLOCATE(vertex_full(np_nodes,np_nodes))
+    ALLOCATE(vertex_vector(np_nodes))
+    ALLOCATE(multiplier_vector(np_nodes))
+
+    vertex(:,:) = 0
+
+    do i=1, np_nodes-1
+       vertex(i,i) = 1
+       do j=i+1, np_nodes
+
+          distance(1:3) = lxyz(nodes(i),1:3) - lxyz(nodes(j),1:3)
+          distance = distance*distance
+          distance_abs = sqrt(distance(1) + distance(2) + distance(3))
+          
+          if(distance_abs<=3.d0) then
+           
+             vertex(i,j) = 1
+          end if
+
+       end do
+    end do
+
+    vertex_full(:,:) = vertex(:,:)
+
+    do i=1, np_nodes
+       do j=1, np_nodes
+          if(vertex(i,j)>0) then
+             vertex_full(i,:) = vertex_full(i,:) + vertex(j,:)
+          end if
+       end do
+    end do
+
+
+    do i=1, np_nodes
+       do j=1, np_nodes
+          if(vertex_full(i,j)>0) vertex_full(i,j) = 1
+       end do
+    end do
+
+    vertex_vector(:) = 1
+    multiplier_vector(:) = 0
+
+    do i=1, np_nodes - 1
+       do j = i + 1, np_nodes                         
+          multiplier_vector(:) = vertex_full(i,:)*vertex_full(j,:)
+          if( sum(multiplier_vector(1:5)) .ne. 0) vertex_vector(j) - 1	
+       end do
+    end do
+
+    ALLOCATE(cluster(np_nodes,np_nodes))
+    n_vertex = 0
+    do i=1, np_nodes
+       if( multiplier_vector(i) .eq. 1) then
+          n_vertex = n_vertex + 1         
+          cluster(n_vertex,1:np_nodes) = vertex_full(i,1:np_nodes)
+       end if 
+    end do
+
+    do i=1, np_nodes
+       do j=1, n_vertex
+          
+          if(cluster(j,i).eq.1) then
+             nodes_vertex_id(i) = j
+          end if
+
+       end do
+    end do
+    
+
+    
     ALLOCATE(permittivity(1:np_nodes,1:np_nodes))  ! dynamical memory alloc
     ALLOCATE(B(1:np_nodes))
     ALLOCATE(IPIV(1:np_nodes))
