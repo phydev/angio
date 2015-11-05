@@ -32,7 +32,11 @@ contains
     integer :: np_skel, m, nodes_connecteds, ierr, Lmn(1:1000,1:1000),  n, ip_old, np_path, np_nodes
     type(hydro_t), allocatable:: hydro(:)
     real, allocatable :: output(:)
-
+    ! vertex variables    
+    integer, allocatable ::  vertex(:,:), vertex_full(:,:), vertex_vector(:), multiplier_vector(:), cluster(:,:)
+    integer, allocatable :: nodes_vertex_id(:)
+    integer :: n_vertex
+    real :: distance(3), distance_abs
 
     ALLOCATE(neighbours(1:np))
     ALLOCATE(hydro(1:np)) 
@@ -270,9 +274,7 @@ contains
 
     end do ! np_nodes
 
-    
-    integer ::  vertex(:,:), vertex_full(:,:), vertex_vector(:), multiplier_vector(:), cluster(:,:)
-    real :: distance(3), distance_abs
+
 
     ALLOCATE(vertex(1:np_nodes,1:np_nodes) )
     ALLOCATE(vertex_full(np_nodes,np_nodes))
@@ -345,49 +347,52 @@ contains
     
 
     
-    ALLOCATE(permittivity(1:np_nodes,1:np_nodes))  ! dynamical memory alloc
+    ALLOCATE(permittivity(n_vertex,n_vertex))  ! dynamical memory alloc
     ALLOCATE(B(1:np_nodes))
     ALLOCATE(IPIV(1:np_nodes))
 
     permittivity(:,:) = 0.d0
 
+
+
     do m=1, np_nodes
        do n=1, np_nodes
 
-          if(nodes_matrix(m,n)>0.d0) then 
-             permittivity(m,n) = 1.d0/real(nodes_matrix(m,n))
+          if(nodes_matrix(m,n)>0.d0 .and. nodes_vertex_id(m).ne.nodes_vertex_id(n)) then 
+             permittivity(nodes_vertex_id(m),nodes_vertex_id(n)) = 1.d0/real(nodes_matrix(m,n))
           end if
 
        end do
     end do
 
-    permittivity(node_inout(1),1:np_nodes) = 0.d0
-    permittivity(node_inout(2),1:np_nodes) = 0.d0
+    permittivity(nodes_vertex_id(node_inout(1)),1:n_vertex) = 0.d0
+    permittivity(nodes_vertex_id(node_inout(2)),1:n_vertex) = 0.d0
     !(row,col)
 
-    do m=1, np_nodes 		
-       permittivity(m,m) = permittivity(m,m) - sum(permittivity(m,1:np_nodes))
+    do m=1, n_vertex 		
+       permittivity(m,m) = permittivity(m,m) - sum(permittivity(m,1:n_vertex))
     end do
 
-    permittivity(node_inout(1),node_inout(1)) = 1.0 
-    permittivity(node_inout(2),node_inout(2)) = 1.0 		
+    permittivity(nodes_vertex_id(node_inout(1)),nodes_vertex_id(node_inout(1))) = 1.0 
+    permittivity(nodes_vertex_id(node_inout(2)),nodes_vertex_id(node_inout(2))) = 1.0 		
 
 
-    B(1:np_nodes) = 0.d0
-    B(node_inout(1)) = 1.d0
-    IPIV(1:np_nodes) = 0
+    B(1:n_vertex) = 0.d0
+    B(nodes_vertex_id(node_inout(1))) = 1.d0
+    IPIV(1:n_vertex) = 0
 
     write(*,*) "lel"
-    call DGESV(np_nodes, 1, permittivity, np_nodes, IPIV, B, np_nodes, ierr)
-    write(*,'(F10.2,F10.2,F10.2,F10.2)') B(1:np_nodes)
+    call DGESV(n_vertex, 1, permittivity, n_vertex, IPIV, B, n_vertex, ierr)
+    write(*,'(F10.2,F10.2,F10.2,F10.2)') B(1:n_vertex)
     write(*,'(I10)') ierr
     write(*,*) "np_skel", np_skel
 
 
     do ip=1, np			
        if(hydro(ip)%m > 0) then             
-          hydro(ip)%flow = (B(hydro(ip)%m) - B(hydro(ip)%n))/&
-               (real(nodes_matrix(hydro(ip)%m, hydro(ip)%n))) 
+         
+          hydro(ip)%flow = (B(nodes_vertex_id(hydro(ip)%m) ) - B(nodes_vertex_id(hydro(ip)%n) ))/&
+               (real(nodes_matrix( nodes_vertex_id(hydro(ip)%m), nodes_vertex_id(hydro(ip)%n) ))) 
           write(*,'(I10,I10,I10,F10.5)') lxyz(ip,1:3), abs(hydro(ip)%flow)
        end if
 
