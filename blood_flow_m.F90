@@ -322,7 +322,7 @@ contains
     do i=1, np_nodes - 1
        do j = i + 1, np_nodes                         
           multiplier_vector(:) = vertex_full(i,:)*vertex_full(j,:)
-          if( sum(multiplier_vector(1:5)) .ne. 0) vertex_vector(j) - 1	
+          if( sum(multiplier_vector(1:np_nodes)) .ne. 0) vertex_vector(j) - 1	
        end do
     end do
 
