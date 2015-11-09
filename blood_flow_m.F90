@@ -1,5 +1,6 @@
 module blood_flow_m
   
+
   implicit none
    
   private
@@ -178,7 +179,7 @@ contains
        connections(:) = 0
        nodes_connecteds = 0
        nodes_matrix_count(:,:) = 0
-       write(*,*) "node",ip, "np_path", np_path
+      ! write(*,*) "node",ip, "np_path", np_path
 
        do n=1, np_path
           ip_old = nodes(ip) 
@@ -186,7 +187,6 @@ contains
           path_length = 0 
           MN_nodes(1) = ip
           MN_nodes(2) = MN_nodes(1)	
-          write(*,*)   "path_n=",n
 
           do while(found.eq.0)  
              attempt = 0 
@@ -280,13 +280,14 @@ contains
     ALLOCATE(vertex_full(np_nodes,np_nodes))
     ALLOCATE(vertex_vector(np_nodes))
     ALLOCATE(multiplier_vector(np_nodes))
+    ALLOCATE(nodes_vertex_id(1:np_nodes))
 
     vertex(:,:) = 0
 
     do i=1, np_nodes-1
        vertex(i,i) = 1
        do j=i+1, np_nodes
-
+          vertex(j,j) = 1
           distance(1:3) = lxyz(nodes(i),1:3) - lxyz(nodes(j),1:3)
           distance = distance*distance
           distance_abs = sqrt(distance(1) + distance(2) + distance(3))
@@ -298,7 +299,7 @@ contains
 
        end do
     end do
-
+    
     vertex_full(:,:) = vertex(:,:)
 
     do i=1, np_nodes
@@ -316,36 +317,43 @@ contains
        end do
     end do
 
+ 
     vertex_vector(:) = 1
     multiplier_vector(:) = 0
+
 
     do i=1, np_nodes - 1
        do j = i + 1, np_nodes                         
           multiplier_vector(:) = vertex_full(i,:)*vertex_full(j,:)
-          if( sum(multiplier_vector(1:np_nodes)) .ne. 0) vertex_vector(j) - 1	
+          if( sum(multiplier_vector(1:np_nodes)) .ne. 0) vertex_vector(j) = vertex_vector(j) - 1	
        end do
     end do
 
     ALLOCATE(cluster(np_nodes,np_nodes))
+    cluster(:,:) = 0
+
     n_vertex = 0
     do i=1, np_nodes
-       if( multiplier_vector(i) .eq. 1) then
+
+       if( vertex_vector(i)>0) then
           n_vertex = n_vertex + 1         
           cluster(n_vertex,1:np_nodes) = vertex_full(i,1:np_nodes)
        end if 
     end do
+    
+
 
     do i=1, np_nodes
        do j=1, n_vertex
-          
+       
           if(cluster(j,i).eq.1) then
              nodes_vertex_id(i) = j
           end if
 
        end do
     end do
-    
-
+    write(*,*) " lol 6"
+    write(*,*) nodes_vertex_id(1:np_nodes)
     
     ALLOCATE(permittivity(n_vertex,n_vertex))  ! dynamical memory alloc
     ALLOCATE(B(1:np_nodes))
@@ -354,17 +362,17 @@ contains
     permittivity(:,:) = 0.d0
 
 
-
     do m=1, np_nodes
        do n=1, np_nodes
-
+          write(*,*) "m,n", m, n
+          write(*,*) "vertex", nodes_vertex_id(m), nodes_vertex_id(n)
           if(nodes_matrix(m,n)>0.d0 .and. nodes_vertex_id(m).ne.nodes_vertex_id(n)) then 
              permittivity(nodes_vertex_id(m),nodes_vertex_id(n)) = 1.d0/real(nodes_matrix(m,n))
           end if
 
        end do
     end do
-
+ 
     permittivity(nodes_vertex_id(node_inout(1)),1:n_vertex) = 0.d0
     permittivity(nodes_vertex_id(node_inout(2)),1:n_vertex) = 0.d0
     !(row,col)
@@ -381,7 +389,7 @@ contains
     B(nodes_vertex_id(node_inout(1))) = 1.d0
     IPIV(1:n_vertex) = 0
 
-    write(*,*) "lel"
+
     call DGESV(n_vertex, 1, permittivity, n_vertex, IPIV, B, n_vertex, ierr)
     write(*,'(F10.2,F10.2,F10.2,F10.2)') B(1:n_vertex)
     write(*,'(I10)') ierr
@@ -426,7 +434,11 @@ contains
     DEALLOCATE(B) 
     DEALLOCATE(IPIV)
 
-
+    DEALLOCATE(vertex)
+    DEALLOCATE(vertex_full)
+    DEALLOCATE(vertex_vector)
+    DEALLOCATE(multiplier_vector)
+    DEALLOCATE(nodes_vertex_id)
 
   end subroutine flow_calc
           
