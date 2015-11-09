@@ -20,7 +20,7 @@
 module run_angio_m  
 
   use thinning_m
- 
+  use blood_flow_m
   
   implicit none
   
@@ -302,7 +302,8 @@ module run_angio_m
                   end if
                end do
                
-               call thinning_run(phis, lxyz, lxyz_inv, lsize, np)
+               call thinning_run(phis, lxyz, lxyz_inv, Lsize, np)
+               call flow_calc(phis,lxyz,lxyz_inv, Lsize, np) 
             end if
             
             write(file_name,'(I6)') nstep
