@@ -51,26 +51,26 @@ program main
 
 
   write(*,'(A)') "Calculating . . ."
-  open(UNIT=15,FILE='data'//dir_name)
+  open(UNIT=15,FILE='data'//dir_name//'.dat')
   do ifile=initial_file, last_file, delta
      
      phis(:) = 0.0
      
      if(ifile>=100000) then
         write(file_id6,'(I6)') ifile
-        call system('wc -l '//dir_name//'/phi'//file_id6//'.xyz'//' > lines_phi')
-        call system('wc -l '//dir_name//'/phis'//file_id6//'.xyz'//' > lines_phis')
+        call system('wc -l '//dir_name//'/phi'//file_id6//'.xyz'//' > lines_phi.aux')
+        call system('wc -l '//dir_name//'/phis'//file_id6//'.xyz'//' > lines_phis.aux')
      else
         write(file_id5,'(I5)') ifile
-        call system('wc -l '//dir_name//'/phi'//file_id5//'.xyz'//' > lines_phi')
-        call system('wc -l '//dir_name//'/phis'//file_id5//'.xyz'//' > lines_phis')
+        call system('wc -l '//dir_name//'/phi'//file_id5//'.xyz'//' > lines_phi.aux')
+        call system('wc -l '//dir_name//'/phis'//file_id5//'.xyz'//' > lines_phis.aux')
      end if
      
-     open(UNIT=100, FILE='lines_phi')
+     open(UNIT=100, FILE='lines_phi.aux')
      read(100,*) lines_phi, temp
      close(100)
 
-     open(UNIT=200, FILE='lines_phis')
+     open(UNIT=200, FILE='lines_phis.aux')
      read(200,*) lines_phis, temp
      close(200)
 
@@ -97,7 +97,7 @@ program main
   close(15)
   
   
-  open(UNIT=16,FILE='plot_file')
+  open(UNIT=16,FILE='plot_file.aux')
   write(16,*) "set xlabel 'time step'"
   write(16,*) "set ylabel 'branches'"
   write(16,*) "set key bottom"
@@ -105,18 +105,18 @@ program main
   write(16,*) "set term pdf"
   write(16,*) "set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1"
   write(16,*) "set output 'branches"//dir_name//".pdf'"
-  write(16,*) "plot 'data"//dir_name//"' using 1:2 title 'branches' w linespoint ls 7"
+  write(16,*) "plot 'data"//dir_name//".dat' using 1:2 title 'branches' w linespoint ls 7"
   write(16,*) "set ylabel 'diameter'"
   write(16,*) "set output 'diameter"//dir_name//".pdf'"  
-  write(16,*) "plot 'data"//dir_name//"' using 1:3 title 'diameter' w linespoint ls 2"
+  write(16,*) "plot 'data"//dir_name//".dat' using 1:3 title 'diameter' w linespoint ls 2"
   write(16,*) "set term wxt"
   close(16)
   
-  call system('gnuplot < plot_file')
+  call system('gnuplot < plot_file.aux')
   
   write(*,*) "-------------------------------------------------------"
   write(*,*) " "
-  write(*,*) "data file: data"//dir_name 
+  write(*,*) "data file: data"//dir_name//".dat" 
   write(*,*) "plotting..."
   write(*,*) "           branches"//dir_name//".pdf... done!"
   write(*,*) "           diameter"//dir_name//".pdf... done!"  
