@@ -806,8 +806,6 @@ module run_angio_m
   !    integer :: remove_list
       ! deactivating vegf sources
 
-      vegf_copy(:,:) = vegf_xyz(:,:)
-
       n_source_o = n_source
       
       sair = .false.
