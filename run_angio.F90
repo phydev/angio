@@ -119,7 +119,7 @@ module run_angio_m
       ALLOCATE(f(1:np))
       ALLOCATE(phis(1:np))
       ! surfaces and points from spheres
-      ALLOCATE(vegf_s(1:500,1:3))
+      ALLOCATE(vegf_s(1:10000,1:3))
       ALLOCATE(tip_s(1:300,1:3))
       ALLOCATE(tip_all(1:500,1:3))
       
@@ -130,7 +130,8 @@ module run_angio_m
       call gen_cell_points(cell_radius, tip_all, np_tip_all)     ! all points of tip cell
 
       ! initializing points for the vegf sources 
-      call spherical_surface(diff_oxy_length, vegf_s, np_vegf_s, 0.2)  
+!      call gen_cell_points(diff_oxy_length, vegf_s, np_vegf_s)
+     call spherical_surface(diff_oxy_length, vegf_s, np_vegf_s, 0.2)  
 
       ! initializing space matrices
       call space_init(Lsize, lxyz, lxyz_inv, boundary_points, np, ndim, periodic)
@@ -800,12 +801,16 @@ module run_angio_m
       logical, intent(in) :: periodic
       ! internal
       integer :: n_source_o, sinal, r(3), i, j, ip, ip_source, temp(3)
+      logical :: sair
+
   !    integer :: remove_list
       ! deactivating vegf sources
-      
+
+      vegf_copy(:,:) = vegf_xyz(:,:)
+
       n_source_o = n_source
       
-      
+      sair = .false.
       do i=1, n_source_o
          
          ip_source = lxyz_inv(vegf_xyz(i,1),vegf_xyz(i,2),vegf_xyz(i,3))
@@ -818,7 +823,7 @@ module run_angio_m
             
             ip = lxyz_inv(r(1),r(2),r(3))
             
-            if( cell(ip)%phi>0.d0) then
+            if( cell(ip)%phi>0.0) then
                
                cell(ip_source)%source = -1
 
@@ -827,11 +832,16 @@ module run_angio_m
                vegf_xyz(n_source,1:3) = temp(1:3)
 
                n_source = n_source - 1
-
+               sair = .TRUE.
+               EXIT
             end if
+
          end do
+
+         if(sair) EXIT
+
       end do
-      
+
       
     end subroutine source_deactivate
     
@@ -1158,7 +1168,7 @@ module run_angio_m
       read(1,*) vegf_source_conc, temp ! Ts - Ang. Fac. on the source
       read(1,*) prolif_rate, temp ! Alphap - Proliferation rate
       read(1,*) vessel_radius, temp ! radius - Initial Vessel Radius
-      read(1,*)   tstep, temp ! tstep - Total time step
+      read(1,*) tstep, temp ! tstep - Total time step
       read(1,*) dt, temp ! dt - Time increment
       read(1,*) chi, temp ! chi - Chemotaxis
       read(1,*) Lsize(1:3), dr(1:3), temp !Box Length - x,y,z, dr
@@ -1175,6 +1185,8 @@ module run_angio_m
       read(1,*) thinning, temp ! thinning on/off
       read(1,*) periodic, temp ! boundary conditions
       CLOSE(1)
+      call system('mkdir '//dir_name)
+
       OPEN (UNIT=2,FILE=dir_name//'/parameters'//dir_name//'.init')
       write(2,'(F10.2,A)') cell_radius, " cell_radius" ! R_c - Cell Radius
       write(2,'(F10.2,A)') diffusion_const, " diffusion_const" ! D - Ang. Fac. Diffusion Constant
