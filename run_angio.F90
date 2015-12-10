@@ -308,7 +308,7 @@ module run_angio_m
             
             write(file_name,'(I6)') nstep
             OPEN (UNIT=nstep,FILE=dir_name//'/phi'//trim(file_name)//'.xyz')
-            OPEN (UNIT=nstep+1,FILE=dir_name//'/t'//trim(file_name)//'.xyz')
+            !OPEN (UNIT=nstep+1,FILE=dir_name//'/t'//trim(file_name)//'.xyz')
             if(thinning) OPEN (UNIT=nstep+2,FILE=dir_name//'/phis'//trim(file_name)//'.xyz')
             do ip=1, np
                
@@ -319,10 +319,10 @@ module run_angio_m
                if(cell(ip)%phi>0) then
                   write(nstep,'(I10,I10,I10,F10.2)') lxyz(ip,1:3), cell(ip)%phi
                end if
-               write(nstep+1,'(I10,I10,I10,F10.2)') lxyz(ip,1:3), cell(ip)%T
+              ! write(nstep+1,'(I10,I10,I10,F10.2)') lxyz(ip,1:3), cell(ip)%T
             end do
             if(thinning) close(nstep+2)
-            close(nstep+1)
+            !close(nstep+1)
             close(nstep)
          end if
          ! end of the output
