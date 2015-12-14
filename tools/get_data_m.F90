@@ -14,10 +14,10 @@ contains
     implicit none
     ! external
     real, allocatable,  intent(in) :: phis(:) 
-	integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:,:)
+    integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:,:)
     integer, intent(in) :: Lsize(3), np
     integer, intent(out) :: output
-	logical, intent(in) :: periodic
+    logical, intent(in) :: periodic
     ! GET_NBRANCHES VARIABLES
     integer :: nbranches, carry_on
     real :: diameter
@@ -282,6 +282,11 @@ contains
                    end do
                 end do
              end do
+
+             if(attempt>14) then
+                found = 1
+                EXIT
+             end if
 
 
           end do ! do while found 
