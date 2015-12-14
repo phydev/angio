@@ -44,8 +44,8 @@ contains
 
    ALLOCATE(path_nodes(10000))
    ALLOCATE(temp_node_index(10000))
-   ALLOCATE(neighbours(1:np))	
-	
+   ALLOCATE(neighbours(1:np))
+
     do ip=1, np 
        neighbours(ip) = 0
        
@@ -60,7 +60,7 @@ contains
                    x = lxyz(ip,1) + i 
                    y = lxyz(ip,2) + j 
                    z = lxyz(ip,3) + k 
-		       
+       
                    ip2 = lxyz_inv(x,y,z)
 
                    if ( phis(ip2).gt.0.and.ip2.ne.ip ) then
