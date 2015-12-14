@@ -283,7 +283,7 @@ contains
                 end do
              end do
 
-             if(attempt>14) then
+             if(attempt>14) then ! avoiding infinity loop
                 found = 1
                 EXIT
              end if
