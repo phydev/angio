@@ -16,4 +16,4 @@ and consists in a phase-field model for tumor angiogenesis. The model is based o
 - A routine to count the branches and the volume of the vessels;
 
 
-![alt tag](https://i1.wp.com/moreirasm.files.wordpress.com/2015/05/filme.gif)
+![alt tag](https://i0.wp.com/moreirasm.files.wordpress.com/2015/05/vessels.gif?w=450)
