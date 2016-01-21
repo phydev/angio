@@ -34,11 +34,12 @@ module blood_flow_m
    
 contains
    
-  subroutine flow_calc(phis,lxyz,lxyz_inv, Lsize, np)    
+  subroutine flow_calc(phis, flow, lxyz, lxyz_inv, Lsize, np)    
 
     implicit none
     
     real, allocatable, intent(in) :: phis(:)
+    real, allocatable, intent(inout) :: flow(:)
     integer, allocatable, intent(in) :: Lxyz(:,:), Lxyz_inv(:,:,:) 
     integer, intent(in) :: Lsize(3), np	 
 
@@ -66,6 +67,7 @@ contains
     ALLOCATE(neighbours(1:np))
     ALLOCATE(hydro(1:np)) 
 
+    flow(:) = -1.d0
     hydro(:)%ip = 0 
     hydro(:)%flow = 0
     hydro(:)%m = 0 
@@ -105,7 +107,7 @@ contains
           if (neighbours(ip).gt.2 .or. neighbours(ip).eq.1) then ! real nodes or tips without connections
              np_nodes = np_nodes + 1
              nodes(np_nodes) = ip 
-             write(*,'(I10,I10,I10,I10)') lxyz(nodes(np_nodes),1:3), np_nodes
+
           end if
        end if
     end do ! nodes 
@@ -142,7 +144,6 @@ contains
        if(found.eq.0) then 
           np_nodes = np_nodes + 1 
           node_inout(k) = np_nodes
-          !write(*,*) lxyz(nodes(np_nodes),1:3), np_nodes
        end if
 
     end do
@@ -154,7 +155,7 @@ contains
 
     ! searching by nodes neighbours
     paths(:) = 0
-    write(*,'(A,I10)') "np_nodes", np_nodes
+
 
     
     do ip=1, np_nodes
@@ -210,8 +211,7 @@ contains
        connections(:) = 0
        nodes_connecteds = 0
        nodes_matrix_count(:,:) = 0
-       write(*,*) "node",ip, "np_path", np_path
-       
+
        do n=1, np_path
           ip_old = nodes(ip) 
           found = 0 
@@ -367,15 +367,14 @@ contains
     do ip=1, np			
        if(hydro(ip)%m > 0) then             
          
-          hydro(ip)%flow = (B(hydro(ip)%m) - B(hydro(ip)%n))/&
-               (real(nodes_matrix(hydro(ip)%m, hydro(ip)%n ))) 
-          write(*,'(I10,I10,I10,F10.5)') lxyz(ip,1:3), abs(hydro(ip)%flow)
+          flow(ip) = abs((B(hydro(ip)%m) - B(hydro(ip)%n))/&
+              (real(nodes_matrix(hydro(ip)%m, hydro(ip)%n ))) )
+        !  write(*,*) flow(ip), lxyz(ip,1:3)
        end if
-
-
     end do
 
- 
+
+
     DEALLOCATE(neighbours)
     DEALLOCATE(hydro)
     DEALLOCATE(nodes_matrix)  ! dynamical memory dealloc ok

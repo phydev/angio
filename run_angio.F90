@@ -62,7 +62,7 @@ module run_angio_m
       integer, allocatable :: lxyz(:,:), lxyz_inv(:,:,:),  grid_cell_domain(:)
       integer :: Lsize(1:3), boundary_points
       integer :: np, np_part, ip, n_max_tipc
-      real, allocatable :: gg(:,:), lapl(:), f(:)
+      real, allocatable :: gg(:,:), lapl(:), f(:), flow(:)
       type(mesh_t), allocatable :: cell(:)
       type(sec_mesh_t), allocatable :: necrotic_tissue(:)
       type(tip_cell_t), allocatable :: tipc(:)
@@ -82,10 +82,9 @@ module run_angio_m
       ! n_tipcell - number of activated tip cells
       ! n_source  - number of vegf sources
       integer :: np_vegf_s, np_tip_s, np_tip_all, n_tipcell = 0
-      integer, allocatable :: vegf_s(:,:), tip_s(:,:), tip_all(:,:)
-
-      !temporary
-      real :: phi_med, t_med
+      integer, allocatable :: vegf_s(:,:), tip_s(:,:), tip_all(:,:), d2sphere(:), sphere(:,:)
+      integer :: flow_count, calc_flow_period=20, np_sphere
+      flow_count = 0
 
       ! initializing parameters
       call  parameters_init(cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length,&
@@ -115,8 +114,7 @@ module run_angio_m
       ALLOCATE(necrotic_tissue(np))
       ALLOCATE(vegf_xyz(1:source_max, 1:3))
       ALLOCATE(gg(1:np,1:3))
-      ALLOCATE(lapl(1:np))
-      ALLOCATE(f(1:np))
+      ALLOCATE(flow(1:np))
       ALLOCATE(phis(1:np))
       ! surfaces and points from spheres
       ALLOCATE(vegf_s(1:10000,1:3))
@@ -129,8 +127,13 @@ module run_angio_m
       call spherical_surface(cell_radius, tip_s, np_tip_s, 0.2)  ! spherical surface increments of tip cell      
       call gen_cell_points(cell_radius, tip_all, np_tip_all)     ! all points of tip cell
 
+      ! initializing points to fill with blood flow
+      ALLOCATE(d2sphere(1:3000))
+      ALLOCATE(sphere(1:3000,1:3))
+      call gen_cell_points(8.0, sphere, np_sphere, d2sphere)
+
       ! initializing points for the vegf sources 
-     call spherical_surface(diff_oxy_length, vegf_s, np_vegf_s, 0.2)  
+      call spherical_surface(diff_oxy_length, vegf_s, np_vegf_s, 0.2)  
 
       ! initializing space matrices
       call space_init(Lsize, lxyz, lxyz_inv, boundary_points, np, ndim, periodic)
@@ -256,7 +259,26 @@ module run_angio_m
            
          end if ! if n_tipcell > 0	 
 
-         call source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic)
+         flow_count = flow_count + 1
+
+         if(flow_count.eq.calc_flow_period) then
+            flow_count = 0
+            do ip=1, np
+               if(cell(ip)%phi>=0) then
+                  phis(ip) = 1.d0
+               else
+                  phis(ip) = -1.d0
+               end if
+            end do
+            
+            call thinning_run(phis, lxyz, lxyz_inv, lsize, np)
+            
+            call flow_calc(phis, flow, lxyz, lxyz_inv, Lsize, np)    
+
+            call fill_vessels(cell%phi, lxyz, lxyz_inv, flow, d2sphere, sphere, np, np_sphere)
+
+            call source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic, flow)
+         end if
 
          call CPU_TIME(time_end)
 
@@ -356,22 +378,22 @@ module run_angio_m
       
     end subroutine run_angio
 
-    subroutine fill_vessels(phi, lxyz, lxyz_inv, flow, d2sphere, sphere, np)
+    subroutine fill_vessels(phi, lxyz, lxyz_inv, flow, d2sphere, sphere, np, nps)
 
       implicit none
 
-      real, allocatable, intent(in) :: phi(:)
+      real, intent(in) :: phi(:)
       real, allocatable, intent(inout) :: flow(:)
       integer, allocatable, intent(in) :: sphere(:,:), d2sphere(:), lxyz(:,:), lxyz_inv(:,:,:)
-      integer, intent(in) :: np
+      integer, intent(in) :: np, nps
       ! intern variables
-      integer :: ip, ips, nps, d2temp,ip2, r(1:3)
+      integer :: ip, ips, d2temp,ip2, r(1:3)
  
       do ip=1, np
          
          if(phi(ip) > 0.d0 .and. flow(ip)<0.d0) then
 
-            d2temp = 10000
+            d2temp = 64
 
             do ips = 1, nps
                
@@ -380,7 +402,8 @@ module run_angio_m
                
                if(flow(ip2)>0.d0 .and. d2sphere(ips)< d2temp) then
                   d2temp = d2sphere(ips)
-                  flow(ip) =  flow(ip2)    
+                  flow(ip) =  flow(ip2)  
+                  write(*,*) flow(ip), lxyz(ip,1:3)
                end if
                
             end do
@@ -814,11 +837,12 @@ module run_angio_m
     
     
     
-    subroutine source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic)
+    subroutine source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic, flow)
       
       implicit none
       
       type(mesh_t), allocatable, intent(inout) :: cell(:)
+      real, allocatable, optional, intent(inout) :: flow(:)
       integer, allocatable, intent(inout) :: vegf_xyz(:,:)
       integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:,:), vegf_s(:,:)
       integer, intent(in) :: Lsize(3), np_vegf_s
@@ -827,8 +851,8 @@ module run_angio_m
       ! internal
       integer :: n_source_o, sinal, r(3), i, j, ip, ip_source, temp(3)
       logical :: sair
+      real :: cutoff_check
 
-  !    integer :: remove_list
       ! deactivating vegf sources
 
       n_source_o = n_source
@@ -845,8 +869,14 @@ module run_angio_m
             r(3) = vegf_xyz(i,3) + vegf_s(j,3)
             
             ip = lxyz_inv(r(1),r(2),r(3))
-            
-            if( cell(ip)%phi>0.0) then
+
+            if(present(flow)) then
+               cutoff_check = flow(ip)
+            else
+               cutoff_check = cell(ip)%phi
+            end if
+
+            if( cutoff_check>0.0) then
                
                cell(ip_source)%source = -1
 
@@ -1371,13 +1401,14 @@ module run_angio_m
     
 
 
-    subroutine gen_cell_points(Rc,R,ndim)
+    subroutine gen_cell_points(Rc,R,ndim, d2)
     
       implicit none
       
       real, intent(in) :: Rc
       integer, intent(inout) :: ndim
       integer, allocatable, intent(inout) :: R(:,:)
+      integer, allocatable, optional, intent(inout) :: d2(:)
       real :: dx, i, j, k,  M_Pi
       integer :: counter
       M_Pi = 3.14159265359
@@ -1390,10 +1421,18 @@ module run_angio_m
             do while(k<=Rc)
                dx = sqrt(i**2 + j**2+ k**2 )
                if(dx <= Rc) then
+                 
                   counter = counter + 1
                   R(counter,1) = int(anint(i))
                   R(counter,2) = int(anint(j))
-                  R(counter,3) = int(anint(k))        
+                  R(counter,3) = int(anint(k))  
+
+                  if(present(d2)) then
+               
+                     d2(counter) = R(counter,1)*R(counter,1) +&
+                                   R(counter,2)*R(counter,2) +&
+                                   R(counter,3)*R(counter,3) 
+                  end if
                   
                end if
                k = k + 1.d0
