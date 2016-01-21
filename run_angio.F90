@@ -20,14 +20,14 @@
 module run_angio_m  
 
   use thinning_m
- 
+  use blood_flow_m
   
   implicit none
   
   private
   
   public :: run_angio
-  
+   
   type tip_cell_t
      integer :: ip    ! ip global
      real :: x, y, z ! global mesh position 
@@ -130,7 +130,6 @@ module run_angio_m
       call gen_cell_points(cell_radius, tip_all, np_tip_all)     ! all points of tip cell
 
       ! initializing points for the vegf sources 
-!      call gen_cell_points(diff_oxy_length, vegf_s, np_vegf_s)
      call spherical_surface(diff_oxy_length, vegf_s, np_vegf_s, 0.2)  
 
       ! initializing space matrices
@@ -203,10 +202,7 @@ module run_angio_m
                          vegf_c, nstep, vegf_grad_min, np, cell_radius, n_max_tipc, np_tip_s, periodic)
 
          ! calculating laplacian of phi
-         f(1:np) = cell(1:np)%phi
-         call dderivatives_lapl(f, lapl, np, dr, lxyz, lxyz_inv)
-         cell(1:np)%lapl_phi = lapl(1:np)
-
+         call dderivatives_lapl(cell%phi, cell%lapl_phi, np, dr, lxyz, lxyz_inv)
 
          ! Chemical potential:  phi**3 - phi - epsilon*laplacian(phi ) 
          do ip = 1, np
@@ -224,14 +220,10 @@ module run_angio_m
          end do
        
          ! Calculating laplacian of mu 
-         f(1:np) = cell(1:np)%mu
-         call dderivatives_lapl(f, lapl, np, dr, lxyz, lxyz_inv)
-         cell(1:np)%lapl_mu = lapl(1:np)
+         call dderivatives_lapl(cell%mu, cell%lapl_mu, np, dr, lxyz, lxyz_inv)
     
-         ! Calculating laplacian of T
-         f(1:np) = cell(1:np)%T
-         call dderivatives_lapl(f, lapl, np, dr, lxyz, lxyz_inv)
-         cell(1:np)%lapl_T = lapl(1:np)
+         ! Calculating laplacian of T 
+         call dderivatives_lapl(cell%T, cell%lapl_T, np, dr, lxyz, lxyz_inv)
 
          ! Temporal evolution phi(t+dt) and T(t+dt)
          
@@ -363,6 +355,39 @@ module run_angio_m
      
       
     end subroutine run_angio
+
+    subroutine fill_vessels(phi, lxyz, lxyz_inv, flow, d2sphere, sphere, np)
+
+      implicit none
+
+      real, allocatable, intent(in) :: phi(:)
+      real, allocatable, intent(inout) :: flow(:)
+      integer, allocatable, intent(in) :: sphere(:,:), d2sphere(:), lxyz(:,:), lxyz_inv(:,:,:)
+      integer, intent(in) :: np
+      ! intern variables
+      integer :: ip, ips, nps, d2temp,ip2, r(1:3)
+ 
+      do ip=1, np
+         
+         if(phi(ip) > 0.d0 .and. flow(ip)<0.d0) then
+
+            d2temp = 10000
+
+            do ips = 1, nps
+               
+               r(1:3) = lxyz(ip,1:3) + sphere(ips,1:3)              
+               ip2 = lxyz_inv(r(1),r(2),r(3))
+               
+               if(flow(ip2)>0.d0 .and. d2sphere(ips)< d2temp) then
+                  d2temp = d2sphere(ips)
+                  flow(ip) =  flow(ip2)    
+               end if
+               
+            end do
+         end if
+      end do
+      
+    end subroutine fill_vessels
 
 
     subroutine init_from_file(cell, lxyz_inv, np, np_phi, dir_name, file_id)
@@ -878,9 +903,9 @@ module run_angio_m
       
       implicit none
 
-      real, allocatable, intent(inout) :: f(:)
+      real, intent(inout) :: f(:)
       integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:,:)
-      real, allocatable, intent(inout) :: lapl(:)
+      real, intent(inout) :: lapl(:)
       integer, intent(in) :: np, dr(3)
       integer :: i, j, k, ip
       
