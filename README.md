@@ -3,7 +3,7 @@ This project is hosted by the [Centre for Computational Physics](http://condmat.
 and consists in a phase-field model for tumor angiogenesis. The model is based on the paper published by
 [Travasso et al. (2011)](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0019989) with some physical and computational improvements.
 
-### Stable version:
+### Blood Flow (V 5.0.s):
 - Blood flow;
 - The hypoxic cells now have volume and interact with the endothelial cells;
 - The system is modeled in three dimensions;
