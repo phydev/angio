@@ -403,7 +403,6 @@ module run_angio_m
                if(flow(ip2)>0.d0 .and. d2sphere(ips)< d2temp) then
                   d2temp = d2sphere(ips)
                   flow(ip) =  flow(ip2)  
-                  write(*,*) flow(ip), lxyz(ip,1:3)
                end if
                
             end do
