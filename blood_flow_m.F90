@@ -369,7 +369,7 @@ contains
          
           flow(ip) = abs((B(hydro(ip)%m) - B(hydro(ip)%n))/&
               (real(nodes_matrix(hydro(ip)%m, hydro(ip)%n ))) )
-        !  write(*,*) flow(ip), lxyz(ip,1:3)
+
        end if
     end do
 
