@@ -185,6 +185,8 @@ module run_angio_m
 
 
       nstep = 0
+      calc_flow_period = tstep
+
       do while(nstep<=tstep)
          nstep = nstep + 1
 
@@ -194,6 +196,10 @@ module run_angio_m
             n_source = -1
          end if
          
+         if(n_tipcell>0) then
+            calc_flow_period = 50
+         end if
+
        
          call CPU_TIME(time_init)
  
@@ -278,6 +284,8 @@ module run_angio_m
             call fill_vessels(cell%phi, lxyz, lxyz_inv, flow, d2sphere, sphere, np, np_sphere)
 
             call source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic, flow)
+
+            
          end if
 
          call CPU_TIME(time_end)
@@ -322,7 +330,7 @@ module run_angio_m
             
             write(file_name,'(I6)') nstep
             OPEN (UNIT=nstep,FILE=dir_name//'/phi'//trim(file_name)//'.xyz')
-            !OPEN (UNIT=nstep+1,FILE=dir_name//'/t'//trim(file_name)//'.xyz')
+            OPEN (UNIT=nstep+1,FILE=dir_name//'/t'//trim(file_name)//'.xyz')
             if(thinning) OPEN (UNIT=nstep+2,FILE=dir_name//'/phis'//trim(file_name)//'.xyz')
             do ip=1, np
                
@@ -331,9 +339,11 @@ module run_angio_m
                end if
                
                if(cell(ip)%phi>0) then
-                  write(nstep,'(I10,I10,I10,F10.2)') lxyz(ip,1:3), cell(ip)%phi
+                  write(nstep,'(I10,I10,I10,F10.2,F10.3)') lxyz(ip,1:3), cell(ip)%phi, flow(ip)
                end if
-              ! write(nstep+1,'(I10,I10,I10,F10.2)') lxyz(ip,1:3), cell(ip)%T
+               if(lxyz(ip,3).eq.0) then
+                  write(nstep+1,'(I10,I10,I10,F10.2)') lxyz(ip,1:2), cell(ip)%T
+               end if
             end do
             if(thinning) close(nstep+2)
             !close(nstep+1)
