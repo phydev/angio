@@ -788,12 +788,12 @@ module run_angio_m
     end subroutine etc_move
     
     
-    
-    subroutine source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic)
+    subroutine source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic, flow)
       
       implicit none
       
       type(mesh_t), allocatable, intent(inout) :: cell(:)
+      real, allocatable, optional, intent(inout) :: flow(:)
       integer, allocatable, intent(inout) :: vegf_xyz(:,:)
       integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:,:), vegf_s(:,:)
       integer, intent(in) :: Lsize(3), np_vegf_s
@@ -801,14 +801,17 @@ module run_angio_m
       logical, intent(in) :: periodic
       ! internal
       integer :: n_source_o, sinal, r(3), i, j, ip, ip_source, temp(3)
-      logical :: sair
+      logical :: deactivated !sair
+      real :: cutoff_check
 
-  !    integer :: remove_list
       ! deactivating vegf sources
 
       n_source_o = n_source
       
-      sair = .false.
+      !sair = .false.
+
+      deactivated = .false.
+
       do i=1, n_source_o
          
          ip_source = lxyz_inv(vegf_xyz(i,1),vegf_xyz(i,2),vegf_xyz(i,3))
@@ -820,23 +823,32 @@ module run_angio_m
             r(3) = vegf_xyz(i,3) + vegf_s(j,3)
             
             ip = lxyz_inv(r(1),r(2),r(3))
-            
-            if( cell(ip)%phi>0.0) then
-               
+
+            if(present(flow)) then
+               cutoff_check = flow(ip)
+            else
+               cutoff_check = cell(ip)%phi
+            end if
+
+            if( cutoff_check>0.0) then
+
+               deactivated = .true.
                cell(ip_source)%source = -1
 
-               temp(1:3) = vegf_xyz(i,1:3)
-               vegf_xyz(i,1:3) = vegf_xyz(n_source,1:3)
-               vegf_xyz(n_source,1:3) = temp(1:3)
+               !temp(1:3) = vegf_xyz(i,1:3)
+               !vegf_xyz(i,1:3) = vegf_xyz(n_source,1:3)
+               !vegf_xyz(n_source,1:3) = temp(1:3)
 
-               n_source = n_source - 1
-               sair = .TRUE.
-               EXIT
+               !n_source = n_source - 1
+               !sair = .TRUE.
+               !EXIT
             end if
 
          end do
 
-         if(sair) EXIT
+         if(.not.deactivated) cell(ip_source)%source = 1
+
+         !if(sair) EXIT
 
       end do
 
