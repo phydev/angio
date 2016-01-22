@@ -859,14 +859,17 @@ module run_angio_m
       logical, intent(in) :: periodic
       ! internal
       integer :: n_source_o, sinal, r(3), i, j, ip, ip_source, temp(3)
-      logical :: sair
+      logical :: deactivated !sair
       real :: cutoff_check
 
       ! deactivating vegf sources
 
       n_source_o = n_source
       
-      sair = .false.
+      !sair = .false.
+
+      deactivated = .false.
+
       do i=1, n_source_o
          
          ip_source = lxyz_inv(vegf_xyz(i,1),vegf_xyz(i,2),vegf_xyz(i,3))
@@ -886,21 +889,24 @@ module run_angio_m
             end if
 
             if( cutoff_check>0.0) then
-               
+
+               deactivated = .true.
                cell(ip_source)%source = -1
 
-               temp(1:3) = vegf_xyz(i,1:3)
-               vegf_xyz(i,1:3) = vegf_xyz(n_source,1:3)
-               vegf_xyz(n_source,1:3) = temp(1:3)
+               !temp(1:3) = vegf_xyz(i,1:3)
+               !vegf_xyz(i,1:3) = vegf_xyz(n_source,1:3)
+               !vegf_xyz(n_source,1:3) = temp(1:3)
 
-               n_source = n_source - 1
-               sair = .TRUE.
-               EXIT
+               !n_source = n_source - 1
+               !sair = .TRUE.
+               !EXIT
             end if
 
          end do
 
-         if(sair) EXIT
+         if(.not.deactivated) cell(ip_source)%source = 1
+
+         !if(sair) EXIT
 
       end do
 
