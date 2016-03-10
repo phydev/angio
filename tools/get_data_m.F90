@@ -44,7 +44,7 @@ contains
 
    ALLOCATE(path_nodes(10000))
    ALLOCATE(temp_node_index(10000))
-   ALLOCATE(neighbours(1:np))
+   ALLOCATE(neighbours(1:np))	
 
     do ip=1, np 
        neighbours(ip) = 0
@@ -60,7 +60,7 @@ contains
                    x = lxyz(ip,1) + i 
                    y = lxyz(ip,2) + j 
                    z = lxyz(ip,3) + k 
-       
+		       
                    ip2 = lxyz_inv(x,y,z)
 
                    if ( phis(ip2).gt.0.and.ip2.ne.ip ) then
@@ -130,7 +130,7 @@ contains
     do ip=1, np_nodes
 
        np_path = 0 
-
+       path_nodes(:) = 0
        ! searching by all neighbours of the node
        ! to walk by them posteriorly 
 
@@ -255,7 +255,7 @@ contains
                                   nodes_matrix(m,ip) = path_length + 1
                                end if
 
-                               path_length = path_length+1
+                               !path_length = path_length+1
                                MN_nodes(2) = m
                                found = 1  
 
@@ -264,7 +264,7 @@ contains
 
                          if(found.eq.0) then 
 
-                            path_ip(path_length+1) = ip2 !paths(n)  ! saving the path for later identify the flow 
+                            path_ip(path_length+1) = paths(n)  ! saving the path for later identify the flow 
                             Lmn(path_length+1,np_path) = paths(n)
                             ip_old = paths(n) 
                             path_length = path_length + 1
@@ -283,11 +283,10 @@ contains
                 end do
              end do
 
-             if(attempt>14) then ! avoiding infinity loop
+             if(attempt>14) then
                 found = 1
                 EXIT
              end if
-
 
           end do ! do while found 
        end do ! np_path 
@@ -296,7 +295,7 @@ contains
     nbranches = 0
     do n=1, np_nodes-1
        do m=n+1, np_nodes
-          if(nodes_matrix(m,n)>1) then
+          if(nodes_matrix(m,n)>8 ) then
              nbranches = nbranches + 1
           end if
        end do
@@ -318,7 +317,7 @@ contains
 
   end subroutine run_get_data
 		
-	subroutine space_init(Lsize, lxyz, lxyz_inv, boundary_points, np, ndim, periodic)
+  subroutine space_init(Lsize, lxyz, lxyz_inv, boundary_points, np, ndim, periodic)
       
       implicit none
       
