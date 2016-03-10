@@ -160,7 +160,7 @@ contains
     do ip=1, np_nodes
 
        np_path = 0 
-
+       path_nodes(:) = 0
        ! searching by all neighbours of the node
        ! to walk by them posteriorly 
 
@@ -294,7 +294,7 @@ contains
 
                          if(found.eq.0) then 
 
-                            path_ip(path_length+1) = ip2 !paths(n)  ! saving the path for later identify the flow 
+                            path_ip(path_length+1) = paths(n)  ! saving the path for later identify the flow 
                             Lmn(path_length+1,np_path) = paths(n)
                             ip_old = paths(n) 
                             path_length = path_length + 1
