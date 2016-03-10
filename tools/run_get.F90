@@ -21,11 +21,11 @@ program main
   read(*,*) initial_file, last_file, delta, dir_name
   
   M_PI = 3.14159265359
-  Lsize(1) = 50
-  Lsize(2) = 50
-  Lsize(3) = 30
+  Lsize(1) = 100
+  Lsize(2) = 100
+  Lsize(3) = 50
   
-  periodic = .true.
+  periodic = .false.
   boundary_points = 2
   
   np = 8 * Lsize(1) * Lsize(2) * Lsize(3)
@@ -55,7 +55,7 @@ program main
   do ifile=initial_file, last_file, delta
      
      phis(:) = 0.0
-     
+     write(*,*) ifile     
      if(ifile>=100000) then
         write(file_id6,'(I6)') ifile
         call system('wc -l '//dir_name//'/phi'//file_id6//'.xyz'//' > lines_phi.aux')
@@ -96,7 +96,7 @@ program main
   end do
   close(15)
   
-  
+!  go to 1
   open(UNIT=16,FILE='plot_file.aux')
   write(16,*) "set xlabel 'time step'"
   write(16,*) "set ylabel 'branches'"
@@ -123,7 +123,7 @@ program main
   write(*,*) " "
   write(*,*) "------------------------------------------------------"
   write(*,*) "End program. "
-  
+! 1 write(*,*) "branchs:", output
   DEALLOCATE(phi)
   DEALLOCATE(phis)
   DEALLOCATE(lxyz)
