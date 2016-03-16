@@ -1102,26 +1102,28 @@ module run_angio_m
                hs(1) = heaviside(real(i))
                hs(2) = heaviside(real(j))
                hs(3) = heaviside(real(k))
-
-               if( abs(i)>Lsize(1)-hs(1)) then
+                  
+ 
+                if( abs(i)>Lsize(1)-hs(1)) then
                   boundary = .true.               
-                  l = i - SIGN(1,i)*(2*Lsize(1)-hs(1))
+                  l = i - SIGN(1,i)*(2*Lsize(1))- SIGN(1,i)*heaviside(-real(i))
                end if
 
                if( abs(j)>Lsize(2)-hs(2)) then
                   boundary = .true.               
-                  m = j  - SIGN(1,j)*(2*Lsize(2)-hs(2))
+                  m = j  - SIGN(1,j)*(2*Lsize(2))- SIGN(1,j)*heaviside(-real(j))
                end if
 
                if( abs(k)>Lsize(3)-hs(3)) then
                   boundary = .true.
                   if(periodic) then
-                     n = k - SIGN(1,k)*(2*Lsize(3)-hs(3))
+                     n = k - SIGN(1,k)*(2*Lsize(3))- SIGN(1,k)*heaviside(-real(k))
                   else
                      n = k - SIGN(1,k)
                   end if
                end if
-               
+ 
+ 
                if(boundary) then
                   ip_part = ip_part + 1
                   
@@ -1304,7 +1306,7 @@ module run_angio_m
       M_Pi = 3.14159265359
       ! Note:
       ! No intrinsic exists to convert between a numeric value and a formatted character 
-      ! string representation – for instance, given the CHARACTER value '154',
+      ! string representation Â– for instance, given the CHARACTER value '154',
       ! obtaining an INTEGER or REAL value with the value 154, or vice versa.
       ! Instead, this functionality is provided by internal-file I/O, 
       ! as in the following example: 
