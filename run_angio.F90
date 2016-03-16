@@ -1126,18 +1126,18 @@ module run_angio_m
 
                if( abs(i)>Lsize(1)-hs(1)) then
                   boundary = .true.               
-                  l = i - SIGN(1,i)*(2*Lsize(1))- SIGN(1,i)*heaviside(-real(i))
+                  l = i - SIGN(1,i)*(2*Lsize(1)) !- SIGN(1,i)*heaviside(-real(i))
                end if
 
                if( abs(j)>Lsize(2)-hs(2)) then
                   boundary = .true.               
-                  m = j  - SIGN(1,j)*(2*Lsize(2))- SIGN(1,j)*heaviside(-real(j))
+                  m = j  - SIGN(1,j)*(2*Lsize(2)) !- SIGN(1,j)*heaviside(-real(j))
                end if
 
                if( abs(k)>Lsize(3)-hs(3)) then
                   boundary = .true.
                   if(periodic) then
-                     n = k - SIGN(1,k)*(2*Lsize(3))- SIGN(1,k)*heaviside(-real(k))
+                     n = k - SIGN(1,k)*(2*Lsize(3)) !- SIGN(1,k)*heaviside(-real(k))
                   else
                      n = k - SIGN(1,k)
                   end if
