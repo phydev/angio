@@ -1,3 +1,4 @@
+
 !! Copyright (C) 2015 M. Moreira
 !!
 !! This program is free software; you can redistribute it and/or modify
@@ -17,7 +18,7 @@
 !!
 !! 
 
-module blood_flow_m
+module blood_flow_m ! Version 4.2.s
   
 
   implicit none
@@ -46,19 +47,12 @@ contains
     ! internal variables
     integer :: ip, ip2
     integer :: i, j, k, x, y, z
-    real, allocatable :: neighbours(:), permittivity(:,:), B(:), midp(:), phi_copy(:)
+    real, allocatable :: neighbours(:), permittivity(:,:), B(:)
     integer, allocatable :: nodes_matrix(:,:), nodes_matrix_count(:,:), IPIV(:)
-    integer :: node_inout(1:2), paths(1:14), paths_copy(1:14), nodes(1:5000), path_length, found, attempt
-    integer :: Li(2), MN_nodes(2), path_length_v(1000), connect, path_ip(1000),  connections(1000) 
+    integer :: node_inout(1:2), paths(1:14), nodes(1:5000), path_length, found, attempt
+    integer :: Li(2), MN_nodes(2), path_length_v(1000), path_ip(1000),  connections(1000) 
     integer :: np_skel, m, nodes_connecteds, ierr, Lmn(1:1000,1:1000),  n, ip_old, np_path, np_nodes
     type(hydro_t), allocatable:: hydro(:)
-    real, allocatable :: output(:)
-    ! vertex variables   
-    real, allocatable :: length_vertex_connections(:,:)
-    integer, allocatable ::  vertex(:,:), vertex_full(:,:), vertex_vector(:), multiplier_vector(:), cluster(:,:)
-    integer, allocatable :: nodes_vertex_id(:)
-    integer :: n_vertex
-    real :: distance(3), distance_abs
     ! new
     integer, allocatable :: path_nodes(:), temp_node_index(:)
 
@@ -76,7 +70,7 @@ contains
 
     np_nodes = 0
     do ip=1, np 
-       neighbours(ip) = 0
+       neighbours(ip) = 0.0
        
 
        if(phis(ip)>0.d0) then
@@ -93,8 +87,10 @@ contains
                    z = lxyz(ip,3) + k 
 
                    ip2 = lxyz_inv(x,y,z)
+        
 
                    if ( phis(ip2).gt.0.and.ip2.ne.ip ) then
+                      
                       neighbours(ip) = neighbours(ip) + 1.0
                    end if
 
@@ -107,10 +103,10 @@ contains
           if (neighbours(ip).gt.2 .or. neighbours(ip).eq.1) then ! real nodes or tips without connections
              np_nodes = np_nodes + 1
              nodes(np_nodes) = ip 
-
           end if
        end if
     end do ! nodes 
+
 
 
     ! search by principal nodes in/out 
@@ -134,6 +130,7 @@ contains
 
                 if (found.eq.0) then 
                    nodes(np_nodes+1) = ip 
+				   
                 end if
 
              end if
@@ -147,8 +144,7 @@ contains
        end if
 
     end do
-
-
+    
     ALLOCATE(nodes_matrix(1:np_nodes,1:np_nodes))  ! dynamical memory alloc
     ALLOCATE(nodes_matrix_count(1:np_nodes,1:np_nodes))
     nodes_matrix(:,:) = 0 
@@ -157,7 +153,7 @@ contains
     paths(:) = 0
 
 
-    
+
     do ip=1, np_nodes
 
        np_path = 0 
@@ -205,6 +201,7 @@ contains
           end do
        end do
 
+       
 
        ! walking for all paths 
 
@@ -219,6 +216,7 @@ contains
           MN_nodes(1) = ip
           MN_nodes(2) = MN_nodes(1)	
           
+          ! when a node has another node as first neighbour
           if(path_nodes(n).eq.1) then
 
              ip2 = paths(n)
@@ -241,13 +239,11 @@ contains
                 nodes_matrix(m,ip) = path_length
              end if
              
-             path_length = path_length
              MN_nodes(2) = m
              found = 1  
           end if
 
           do while(found.eq.0)  
-             attempt = 0 
 
              do i=-1,1
                 do j=-1,1
@@ -258,10 +254,9 @@ contains
                       z = lxyz(paths(n),3) + k 
 
                       ip2 = lxyz_inv(x,y,z)
-
+                      
                       if( (phis(ip2).gt.0).and.(ip2.ne.ip_old)&
                            .and.(ip2.ne.paths(n))) then  ! ip_old is to guarantee no return
-
 
                          do m=1, np_nodes
 
@@ -272,7 +267,7 @@ contains
 
                                path_length_v(n) = path_length+1
                                path_ip(path_length + 1) = ip2
-                               Lmn(1:path_length, n) = path_ip(1:path_length)
+                               Lmn(1:path_length+1, n) = path_ip(1:path_length+1)
                                Lmn(path_length+1, n) = Lmn(path_length+1, n) + paths(n)
 
                                nodes_matrix_count(ip,m) = nodes_matrix_count(ip,m) + 1
@@ -284,7 +279,6 @@ contains
                                   nodes_matrix(ip,m) = path_length + 1
                                   nodes_matrix(m,ip) = path_length + 1
                                end if
-
                                path_length = path_length+1
                                MN_nodes(2) = m
                                found = 1  
@@ -293,30 +287,27 @@ contains
                          end do
 
                          if(found.eq.0) then 
-
-                            path_ip(path_length+1) = paths(n)  ! saving the path for later identify the flow 
-                            Lmn(path_length+1,np_path) = paths(n)
+                            path_ip(path_length+1) = ip2!paths(n)  ! saving the path for later identify the flow 
+                            Lmn(path_length+1,np_path) = ip2! paths(n)
                             ip_old = paths(n) 
                             path_length = path_length + 1
-                            path_length_v(n) = path_length 
+                            path_length_v(n) = path_length
                             paths(n) = ip2 
-                            attempt = 0 
                             hydro(ip2)%m = MN_nodes(1)
                          end if
 
                       else
 
-                         attempt = attempt + 1
+                       !  attempt = attempt + 1
                       end if
 
                    end do
                 end do
              end do
 
-
           end do ! do while found 
 
-       
+   
           do i=1, path_length_v(n)
 
              ! ip, m
@@ -330,6 +321,8 @@ contains
 
     end do ! np_nodes
     
+
+
     ALLOCATE(permittivity(np_nodes,np_nodes))  ! dynamical memory alloc
     ALLOCATE(B(1:np_nodes))
     ALLOCATE(IPIV(1:np_nodes))
@@ -365,11 +358,13 @@ contains
     call DGESV(np_nodes, 1, permittivity, np_nodes, IPIV, B, np_nodes, ierr)
 
     do ip=1, np			
-       if(hydro(ip)%m > 0) then             
-         
-          flow(ip) = abs((B(hydro(ip)%m) - B(hydro(ip)%n))/&
-              (real(nodes_matrix(hydro(ip)%m, hydro(ip)%n ))) )
-
+       if(hydro(ip)%m.ne.hydro(ip)%n) then             
+       !  write(*,*) B(hydro(ip)%m), B(hydro(ip)%n), nodes_matrix(hydro(ip)%m, hydro(ip)%n ), ip
+       !        flow(ip) = abs( (B(hydro(ip)%m) - B(hydro(ip)%n) ))         
+          flow(ip) =  abs((B(hydro(ip)%m) - B(hydro(ip)%n))/&
+               (real(nodes_matrix(hydro(ip)%m, hydro(ip)%n ))) )
+       else	
+          flow(ip) = -1.0
        end if
     end do
 
