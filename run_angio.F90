@@ -75,7 +75,7 @@ module run_angio_m
       logical :: periodic
       ! thinning
       logical :: thinning
-      real, allocatable :: phis(:)
+      real, allocatable :: phis(:), flow_full(:)
       ! np_vegf_s  - number of points on the spherical surface representing the limit signaling of vegf source
       ! np_tip_s   - number of points on the spherical surface representing tip cell limits
       ! np_tip_all - all points inside tip cell
@@ -115,6 +115,7 @@ module run_angio_m
       ALLOCATE(vegf_xyz(1:source_max, 1:3))
       ALLOCATE(gg(1:np,1:3))
       ALLOCATE(flow(1:np))
+      ALLOCATE(flow_full(1:np))
       ALLOCATE(phis(1:np))
       ! surfaces and points from spheres
       ALLOCATE(vegf_s(1:10000,1:3))
@@ -158,16 +159,6 @@ module run_angio_m
   
       write(*,'(A)') "Running Cahn-Hilliard steps for the hypoxic tissue... done!" 
 
-      ! init from file
-      ! caution: this feature can't load the tip cells
-      ! just the fields Phi and T
-      ! use on your own risk!
-      ! write(*,'(A)') "Loading previous system..."
-      ! file_id = ' 73000'
-      !                     field, ...,    ..., ... , directory, ...
-      ! call init_from_file(cell, lxyz_inv, np, np_phi, 'db6' ,  file_id)
-
-
       write(*,'(A)') "Initiating the core program..."      
 
       ! saving the initial condition
@@ -185,7 +176,7 @@ module run_angio_m
 
 
       nstep = 0
-      calc_flow_period = tstep
+      calc_flow_period = 10
 
       do while(nstep<=tstep)
          nstep = nstep + 1
@@ -266,7 +257,7 @@ module run_angio_m
          end if ! if n_tipcell > 0	 
 
          flow_count = flow_count + 1
-
+         flow(:) = -1.d0
          if(flow_count.eq.calc_flow_period) then
             flow_count = 0
             do ip=1, np
@@ -281,9 +272,9 @@ module run_angio_m
             
             call flow_calc(phis, flow, lxyz, lxyz_inv, Lsize, np)    
 
-            call fill_vessels(cell%phi, lxyz, lxyz_inv, flow, d2sphere, sphere, np, np_sphere)
+            call fill_vessels(flow_full, cell%phi, Lsize, lxyz, lxyz_inv, flow, d2sphere, sphere, np, np_sphere)
 
-            call source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic, flow)
+            call source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic, flow_full)
 
             
          end if
@@ -335,18 +326,19 @@ module run_angio_m
             do ip=1, np
                
                if(phis(ip)>0.and.thinning) then
-                  write(nstep+2,'(I10,I10,I10,F10.2)') lxyz(ip,1:3), phis(ip)
+                  write(nstep+2,'(I10,I10,I10,F10.2,F10.2)') lxyz(ip,1:3), phis(ip), flow(ip)
                end if
                
                if(cell(ip)%phi>0) then
-                  write(nstep,'(I10,I10,I10,F10.2,F10.3)') lxyz(ip,1:3), cell(ip)%phi, flow(ip)
+                  
+                 write(nstep,'(I10,I10,I10,F10.2,F10.3)') lxyz(ip,1:3), cell(ip)%phi, flow_full(ip)
                end if
                if(lxyz(ip,3).eq.0) then
-                  write(nstep+1,'(I10,I10,I10,F10.2)') lxyz(ip,1:2), cell(ip)%T
+                  write(nstep+1,'(I10,I10,F10.2)') lxyz(ip,1:2), cell(ip)%T
                end if
             end do
             if(thinning) close(nstep+2)
-            !close(nstep+1)
+            close(nstep+1)
             close(nstep)
          end if
          ! end of the output
@@ -356,7 +348,7 @@ module run_angio_m
      
       end do
       
-
+      
       OPEN (UNIT=333,FILE=trim(dir_name//'/phi.xyz'))
       OPEN (UNIT=222,FILE=trim(dir_name//'/t.xyz'))
       do ip=1, np
@@ -368,7 +360,7 @@ module run_angio_m
       close(333)
       close(222)
       
-      
+
       DEALLOCATE(lxyz)
       DEALLOCATE(lxyz_inv)
       DEALLOCATE(cell)
@@ -376,43 +368,45 @@ module run_angio_m
       DEALLOCATE(necrotic_tissue)
       DEALLOCATE(vegf_xyz)
       DEALLOCATE(gg)
-      DEALLOCATE(lapl)
-      DEALLOCATE(f)
       DEALLOCATE(phis)
       DEALLOCATE(vegf_s)
       DEALLOCATE(tip_s)
       DEALLOCATE(tip_all)
       DEALLOCATE(grid_cell_domain)
-      
+
      
       
     end subroutine run_angio
 
-    subroutine fill_vessels(phi, lxyz, lxyz_inv, flow, d2sphere, sphere, np, nps)
+    subroutine fill_vessels(flow_full, phi, Lsize, lxyz, lxyz_inv, flow, d2sphere, sphere, np, nps)
 
       implicit none
 
       real, intent(in) :: phi(:)
+      real, allocatable, intent(inout) :: flow_full(:)
       real, allocatable, intent(inout) :: flow(:)
       integer, allocatable, intent(in) :: sphere(:,:), d2sphere(:), lxyz(:,:), lxyz_inv(:,:,:)
-      integer, intent(in) :: np, nps
+      integer, intent(in) :: np, nps, Lsize(3)
       ! intern variables
+	  real :: hs(1:3)
       integer :: ip, ips, d2temp,ip2, r(1:3)
- 
+      
+      flow_full(:) = flow(:)
       do ip=1, np
          
-         if(phi(ip) > 0.d0 .and. flow(ip)<0.d0) then
+         if(phi(ip) .ge. 0.d0 .and. flow(ip) .lt. 0.d0) then
 
-            d2temp = 64
+            d2temp = 100000
 
             do ips = 1, nps
                
                r(1:3) = lxyz(ip,1:3) + sphere(ips,1:3)              
+
                ip2 = lxyz_inv(r(1),r(2),r(3))
-               
-               if(flow(ip2)>0.d0 .and. d2sphere(ips)< d2temp) then
+			   
+               if(flow(ip2) .ge. 0.d0 .and. d2sphere(ips) .lt. d2temp) then
                   d2temp = d2sphere(ips)
-                  flow(ip) =  flow(ip2)  
+                  flow_full(ip) =  flow(ip2)  
                end if
                
             end do
@@ -421,37 +415,6 @@ module run_angio_m
       
     end subroutine fill_vessels
 
-
-    subroutine init_from_file(cell, lxyz_inv, np, np_phi, dir_name, file_id)
-
-      implicit none
-      ! external
-      type(mesh_t), allocatable, intent(inout) :: cell(:)
-      integer, intent(in) :: np, np_phi
-      integer, allocatable, intent(in) :: lxyz_inv(:,:,:)
-      character(3), intent(in) :: dir_name
-      character(10), intent(in) :: file_id
-      ! private
-      integer :: r(3), ip
-      real :: phi_temp
-      
-      open(UNIT=100, FILE=dir_name//'/phi'//trim(file_id)//'.xyz')
-      open(UNIT=200, FILE=dir_name//'/t'//trim(file_id)//'.xyz')
-      cell(:)%phi = -1.d0
-      do ip=1, np
-         read(200,*) r(1:3), cell(ip)%T
-      end do
-
-      do ip=1, np_phi
-         read(100,*) r(1:3), phi_temp
-
-         cell(lxyz_inv(r(1),r(2),r(3) ) )%phi = phi_temp
-      end do
-
-      close(100)
-      close(200)
-      
-    end subroutine init_from_file
 
     subroutine gen_grid_cell_domain(grid_cell_domain, vegf_xyz, Lsize, lxyz, np, n_source, cell_radius, ndim)
    
@@ -1163,18 +1126,18 @@ module run_angio_m
 
                if( abs(i)>Lsize(1)-hs(1)) then
                   boundary = .true.               
-                  l = i - SIGN(1,i)*(2*Lsize(1)-hs(1))
+                  l = i - SIGN(1,i)*(2*Lsize(1))- SIGN(1,i)*heaviside(-real(i))
                end if
 
                if( abs(j)>Lsize(2)-hs(2)) then
                   boundary = .true.               
-                  m = j  - SIGN(1,j)*(2*Lsize(2)-hs(2))
+                  m = j  - SIGN(1,j)*(2*Lsize(2))- SIGN(1,j)*heaviside(-real(j))
                end if
 
                if( abs(k)>Lsize(3)-hs(3)) then
                   boundary = .true.
                   if(periodic) then
-                     n = k - SIGN(1,k)*(2*Lsize(3)-hs(3))
+                     n = k - SIGN(1,k)*(2*Lsize(3))- SIGN(1,k)*heaviside(-real(k))
                   else
                      n = k - SIGN(1,k)
                   end if
@@ -1309,7 +1272,7 @@ module run_angio_m
       call getlog(username) 
       write(*,'(A)') "                                Running Angio"
       write(*,'(A)') "       "
-      write(*,'(A)') "Version        :       5.0.s"
+      write(*,'(A)') "Version        :       5.2.s"
       write(*,'(A,A)') "Locate         :       ", trim(cwd)
       write(*,'(A,A)') "User           :       ", trim(username)
       write(*,'(A)') "Developer      :       Moreira, M."
@@ -1362,7 +1325,7 @@ module run_angio_m
       M_Pi = 3.14159265359
       ! Note:
       ! No intrinsic exists to convert between a numeric value and a formatted character 
-      ! string representation – for instance, given the CHARACTER value '154',
+      ! string representation Â– for instance, given the CHARACTER value '154',
       ! obtaining an INTEGER or REAL value with the value 154, or vice versa.
       ! Instead, this functionality is provided by internal-file I/O, 
       ! as in the following example: 
