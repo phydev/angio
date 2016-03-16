@@ -1270,7 +1270,7 @@ module run_angio_m
       call hostnm(hostname) 
       call getcwd(cwd)
       call getlog(username) 
-      write(*,'(A)') "                                Running Angio"
+      write(*,'(A)') "                                Running Angio with Blood flow"
       write(*,'(A)') "       "
       write(*,'(A)') "Version        :       5.2.s"
       write(*,'(A,A)') "Locate         :       ", trim(cwd)
