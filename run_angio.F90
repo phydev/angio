@@ -176,7 +176,7 @@ module run_angio_m
 
 
       nstep = 0
-      calc_flow_period = 10
+      calc_flow_period = 2000
 
       do while(nstep<=tstep)
          nstep = nstep + 1
