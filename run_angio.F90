@@ -713,20 +713,20 @@ module run_angio_m
          ! boundary condiditions
          
          if(tipc(ip2)%x>Lsize(1) - 1 ) then
-            tipc(ip2)%x = tipc(ip2)%x - 2.d0*Lsize(1) + 1.d0
+            tipc(ip2)%x = tipc(ip2)%x - 2.d0*Lsize(1) 
          else if(tipc(ip2)%x< -Lsize(1)) then
             tipc(ip2)%x = tipc(ip2)%x + 2.d0*Lsize(1) - 1.d0
          end if
          
          if(tipc(ip2)%y>Lsize(2) - 1 ) then
-            tipc(ip2)%y = tipc(ip2)%y - 2.d0*Lsize(2) + 1.d0
+            tipc(ip2)%y = tipc(ip2)%y - 2.d0*Lsize(2) 
          else if(tipc(ip2)%y< -Lsize(2)) then
             tipc(ip2)%y = tipc(ip2)%y + 2.d0*Lsize(2) - 1.d0
          end if
          
          if(periodic) then
             if(tipc(ip2)%z>Lsize(3) - 1 ) then
-               tipc(ip2)%z = tipc(ip2)%z - 2.d0*Lsize(3) + 1.d0
+               tipc(ip2)%z = tipc(ip2)%z - 2.d0*Lsize(3) 
             else if(tipc(ip2)%z< -Lsize(3)) then
                tipc(ip2)%z = tipc(ip2)%z + 2.d0*Lsize(3) - 1.d0
             end if
