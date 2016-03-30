@@ -18,7 +18,7 @@
 !!
 !! 
 
-module blood_flow_m ! Version 4.2.s
+module blood_flow_m ! version 5.2.s
   
 
   implicit none
@@ -35,14 +35,14 @@ module blood_flow_m ! Version 4.2.s
    
 contains
    
-  subroutine flow_calc(phis, flow, lxyz, lxyz_inv, Lsize, np)    
+  subroutine flow_calc(phis, flow, lxyz, lxyz_inv, Lsize, np, nstep)    
 
     implicit none
     
     real, allocatable, intent(in) :: phis(:)
     real, allocatable, intent(inout) :: flow(:)
     integer, allocatable, intent(in) :: Lxyz(:,:), Lxyz_inv(:,:,:) 
-    integer, intent(in) :: Lsize(3), np	 
+    integer, intent(in) :: Lsize(3), np, nstep
 
     ! internal variables
     integer :: ip, ip2
@@ -114,12 +114,12 @@ contains
     Li(2) =  Lsize(3) - 1 
 
     do k=1,2
-       !obsolete: temp = 10000
+     
        found = 0
-       do i = -5,5!-Lsize(2), Lsize(2)-1
-          do j = -5,5 !-Lsize(3), Lsize(3)-1 
+       do i = -5,5
+          do j = -5,5 
              ip = lxyz_inv(i,j,Li(k))
-             ! obsolete condition: .and. (j**2 + k**2.lt.temp)
+           
              if( phis(ip).gt.0  ) then 
                 do m=1,np_nodes 
                    if(ip.eq.nodes(m)) then 
@@ -130,7 +130,6 @@ contains
 
                 if (found.eq.0) then 
                    nodes(np_nodes+1) = ip 
-				   
                 end if
 
              end if
@@ -144,6 +143,7 @@ contains
        end if
 
     end do
+!    write(*,*) "nodes in out:", node_inout(1:2)
     
     ALLOCATE(nodes_matrix(1:np_nodes,1:np_nodes))  ! dynamical memory alloc
     ALLOCATE(nodes_matrix_count(1:np_nodes,1:np_nodes))
@@ -216,7 +216,7 @@ contains
           MN_nodes(1) = ip
           MN_nodes(2) = MN_nodes(1)	
           
-          ! when a node has another node as first neighbour
+          ! nodes that are first neighbours
           if(path_nodes(n).eq.1) then
 
              ip2 = paths(n)
@@ -244,6 +244,7 @@ contains
           end if
 
           do while(found.eq.0)  
+             attempt = 0 
 
              do i=-1,1
                 do j=-1,1
@@ -257,54 +258,64 @@ contains
                       
                       if( (phis(ip2).gt.0).and.(ip2.ne.ip_old)&
                            .and.(ip2.ne.paths(n))) then  ! ip_old is to guarantee no return
-
+                      
                          do m=1, np_nodes
 
 
                             if (nodes(m).eq.ip2) then	
-
+                               path_length = path_length+1
                                nodes_connecteds = nodes_connecteds + 1
 
-                               path_length_v(n) = path_length+1
-                               path_ip(path_length + 1) = ip2
-                               Lmn(1:path_length+1, n) = path_ip(1:path_length+1)
-                               Lmn(path_length+1, n) = Lmn(path_length+1, n) + paths(n)
+                               path_length_v(n) = path_length
+                               path_ip(path_length) = ip2 ! ip_length - 1 , why?
+                               Lmn(1:path_length, n) = path_ip(1:path_length)
+                               Lmn(path_length, n) = Lmn(path_length, n) + paths(n)
 
                                nodes_matrix_count(ip,m) = nodes_matrix_count(ip,m) + 1
 
                                if ( nodes_matrix_count(ip,m) > 1) then
-                                  nodes_matrix(ip,m) = nodes_matrix(ip,m) + path_length + 1
-                                  nodes_matrix(m,ip) = nodes_matrix(m,ip) + path_length + 1
+                                  nodes_matrix(ip,m) = nodes_matrix(ip,m) + path_length 
+                                  nodes_matrix(m,ip) = nodes_matrix(m,ip) + path_length 
                                else
-                                  nodes_matrix(ip,m) = path_length + 1
-                                  nodes_matrix(m,ip) = path_length + 1
+                                  nodes_matrix(ip,m) = path_length 
+                                  nodes_matrix(m,ip) = path_length 
                                end if
-                               path_length = path_length+1
+                              ! write(*,*) m, ip, nodes_matrix(ip,m)
+                               
                                MN_nodes(2) = m
                                found = 1  
+                               EXIT
 
                             end if
                          end do
 
                          if(found.eq.0) then 
-                            path_ip(path_length+1) = ip2!paths(n)  ! saving the path for later identify the flow 
-                            Lmn(path_length+1,np_path) = ip2! paths(n)
-                            ip_old = paths(n) 
                             path_length = path_length + 1
+                            path_ip(path_length) = ip2!paths(n)  ! saving the path for later identify the flow 
+                            Lmn(path_length,np_path) = ip2! paths(n)
+                            ip_old = paths(n) 
                             path_length_v(n) = path_length
                             paths(n) = ip2 
+                            attempt = 0 
                             hydro(ip2)%m = MN_nodes(1)
                          end if
 
                       else
 
-                       !  attempt = attempt + 1
+                         attempt = attempt + 1
                       end if
-
+                      if(found.eq.1) EXIT
                    end do
+                   if(found.eq.1) EXIT
                 end do
+                if(found.eq.1) EXIT
              end do
-
+         
+             if(attempt.ge.27) then 
+                write(*,'(A)') "Exception found due to the von Neunmann boundary conditions in the axial component."
+                write(*,'(A,I10)') "The program will continue, but please verify the blood flow in follow step:", nstep
+                EXIT
+             end if
           end do ! do while found 
 
    
@@ -343,12 +354,12 @@ contains
     permittivity(node_inout(2),1:np_nodes) = 0.d0
     !(row,col)
 
-    do m=1, np_nodes		
+    do m=1, np_nodes
        permittivity(m,m) = permittivity(m,m) - sum(permittivity(m,1:np_nodes))
     end do
 
     permittivity(node_inout(1),node_inout(1)) = 1.0 
-    permittivity(node_inout(2),node_inout(2)) = 1.0 		
+    permittivity(node_inout(2),node_inout(2)) = 1.0
 
 
     B(1:np_nodes) = 0.d0
@@ -357,25 +368,27 @@ contains
 
     call DGESV(np_nodes, 1, permittivity, np_nodes, IPIV, B, np_nodes, ierr)
 
-    do ip=1, np			
+    do ip=1, np
        if(hydro(ip)%m.ne.hydro(ip)%n) then             
        !  write(*,*) B(hydro(ip)%m), B(hydro(ip)%n), nodes_matrix(hydro(ip)%m, hydro(ip)%n ), ip
-       !        flow(ip) = abs( (B(hydro(ip)%m) - B(hydro(ip)%n) ))         
-          flow(ip) =  abs((B(hydro(ip)%m) - B(hydro(ip)%n))/&
-               (real(nodes_matrix(hydro(ip)%m, hydro(ip)%n ))) )
-       else	
+          !     flow(ip) = abs( (B(hydro(ip)%m) - B(hydro(ip)%n) ))
+          
+          flow(ip) =  abs((B(hydro(ip)%m) - B(hydro(ip)%n))/(real(nodes_matrix(hydro(ip)%m, hydro(ip)%n ))) )
+       else
           flow(ip) = -1.0
        end if
     end do
 
-
-
+    DEALLOCATE(path_nodes)
+    DEALLOCATE(temp_node_index)
     DEALLOCATE(neighbours)
-    DEALLOCATE(hydro)
-    DEALLOCATE(nodes_matrix)  ! dynamical memory dealloc ok
-    DEALLOCATE(permittivity)
-    DEALLOCATE(B) 
+    DEALLOCATE(hydro) 
+    DEALLOCATE(nodes_matrix)  ! dynamical memory alloc
+    DEALLOCATE(nodes_matrix_count)
+    DEALLOCATE(permittivity)  ! dynamical memory alloc
+    DEALLOCATE(B)
     DEALLOCATE(IPIV)
+
 
 
   end subroutine flow_calc
