@@ -176,7 +176,7 @@ module run_angio_m
 
 
       nstep = 0
-      calc_flow_period = 2000
+      calc_flow_period = output_period
 
       do while(nstep<=tstep)
          nstep = nstep + 1
@@ -257,8 +257,9 @@ module run_angio_m
          end if ! if n_tipcell > 0	 
 
          flow_count = flow_count + 1
-         flow(:) = -1.d0
-         if(flow_count.eq.calc_flow_period) then
+         
+         if(flow_count.eq.calc_flow_period .or. counter+1.eq.output_period) then
+            flow(:) = -1.d0
             flow_count = 0
             do ip=1, np
                if(cell(ip)%phi>=0) then
@@ -267,16 +268,16 @@ module run_angio_m
                   phis(ip) = -1.d0
                end if
             end do
-            
-            call thinning_run(phis, lxyz, lxyz_inv, lsize, np)
-            
-            call flow_calc(phis, flow, lxyz, lxyz_inv, Lsize, np)    
-
+           
+            call thinning_run(phis, lxyz, lxyz_inv, lsize, np)    
+         
+            call flow_calc(phis, flow, lxyz, lxyz_inv, Lsize, np, nstep)    
+         
             call fill_vessels(flow_full, cell%phi, Lsize, lxyz, lxyz_inv, flow, d2sphere, sphere, np, np_sphere)
-
+         
             call source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic, flow_full)
+         
 
-            
          end if
 
          call CPU_TIME(time_end)
@@ -306,19 +307,7 @@ module run_angio_m
          if(counter.eq.output_period) then
             write(*,*) nstep
             counter = 0
-
-            if(thinning) then
-               do ip=1, np
-                  if(cell(ip)%phi>=0) then
-                     phis(ip) = 1.d0
-                  else
-                     phis(ip) = -1.d0
-                  end if
-               end do
-               
-               call thinning_run(phis, lxyz, lxyz_inv, lsize, np)
-            end if
-            
+           
             write(file_name,'(I6)') nstep
             OPEN (UNIT=nstep,FILE=dir_name//'/phi'//trim(file_name)//'.xyz')
             OPEN (UNIT=nstep+1,FILE=dir_name//'/t'//trim(file_name)//'.xyz')
@@ -384,7 +373,7 @@ module run_angio_m
 
       real, intent(in) :: phi(:)
       real, allocatable, intent(inout) :: flow_full(:)
-      real, allocatable, intent(inout) :: flow(:)
+      real, allocatable, intent(in) :: flow(:)
       integer, allocatable, intent(in) :: sphere(:,:), d2sphere(:), lxyz(:,:), lxyz_inv(:,:,:)
       integer, intent(in) :: np, nps, Lsize(3)
       ! intern variables
@@ -404,7 +393,7 @@ module run_angio_m
 
                ip2 = lxyz_inv(r(1),r(2),r(3))
 			   
-               if(flow(ip2) .ge. 0.d0 .and. d2sphere(ips) .lt. d2temp) then
+               if(flow(ip2) .gt. 0.d0 .and. d2sphere(ips) .lt. d2temp) then
                   d2temp = d2sphere(ips)
                   flow_full(ip) =  flow(ip2)  
                end if
@@ -733,7 +722,7 @@ module run_angio_m
          ! boundary condiditions
          
          if(tipc(ip2)%x>Lsize(1) - 1 ) then
-            tipc(ip2)%x = tipc(ip2)%x - 2.d0*Lsize(1) + 1.d0 
+            tipc(ip2)%x = tipc(ip2)%x - 2.d0*Lsize(1) + 1.d0
          else if(tipc(ip2)%x< -Lsize(1)) then
             tipc(ip2)%x = tipc(ip2)%x + 2.d0*Lsize(1) - 1.d0
          end if
@@ -757,9 +746,9 @@ module run_angio_m
          end if
 
 
-         tipc(ip2)%ip = lxyz_inv(int(anint(tipc(ip2)%x)),&
-              int( anint(tipc(ip2)%y)),&
-              int( anint(tipc(ip2)%z))) ! new ip global
+         tipc(ip2)%ip = lxyz_inv(int( anint(tipc(ip2)%x)),&
+              int(anint(tipc(ip2)%y)),&
+              int(anint( tipc(ip2)%z)) ) ! new ip global
 
          ! Calculating Phi_c inside tipcell
            
@@ -855,7 +844,7 @@ module run_angio_m
 
                deactivated = .true.
                cell(ip_source)%source = -1
-
+               !write(*,*) "hypoxic cell deactivated (x,y,z), n_source:", lxyz(ip_source,1:3), n_source -1
                !temp(1:3) = vegf_xyz(i,1:3)
                !vegf_xyz(i,1:3) = vegf_xyz(n_source,1:3)
                !vegf_xyz(n_source,1:3) = temp(1:3)
@@ -1126,18 +1115,18 @@ module run_angio_m
 
                if( abs(i)>Lsize(1)-hs(1)) then
                   boundary = .true.               
-                  l = i - SIGN(1,i)*(2*Lsize(1)) !- SIGN(1,i)*heaviside(-real(i))
+                  l = i - SIGN(1,i)*(2*Lsize(1))
                end if
 
                if( abs(j)>Lsize(2)-hs(2)) then
                   boundary = .true.               
-                  m = j  - SIGN(1,j)*(2*Lsize(2)) !- SIGN(1,j)*heaviside(-real(j))
+                  m = j  - SIGN(1,j)*(2*Lsize(2))
                end if
 
                if( abs(k)>Lsize(3)-hs(3)) then
                   boundary = .true.
                   if(periodic) then
-                     n = k - SIGN(1,k)*(2*Lsize(3)) !- SIGN(1,k)*heaviside(-real(k))
+                     n = k - SIGN(1,k)*(2*Lsize(3))
                   else
                      n = k - SIGN(1,k)
                   end if
@@ -1462,4 +1451,3 @@ module run_angio_m
        
 
   end module run_angio_m
-  
