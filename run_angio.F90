@@ -788,12 +788,11 @@ module run_angio_m
     end subroutine etc_move
     
     
-    subroutine source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic, flow)
+    subroutine source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic)
       
       implicit none
       
       type(mesh_t), allocatable, intent(inout) :: cell(:)
-      real, allocatable, optional, intent(inout) :: flow(:)
       integer, allocatable, intent(inout) :: vegf_xyz(:,:)
       integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:,:), vegf_s(:,:)
       integer, intent(in) :: Lsize(3), np_vegf_s
@@ -824,13 +823,8 @@ module run_angio_m
             
             ip = lxyz_inv(r(1),r(2),r(3))
 
-            if(present(flow)) then
-               cutoff_check = flow(ip)
-            else
-               cutoff_check = cell(ip)%phi
-            end if
 
-            if( cutoff_check>0.0) then
+            if( cell(ip)%phi>0.0) then
 
                deactivated = .true.
                cell(ip_source)%source = -1
