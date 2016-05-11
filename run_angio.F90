@@ -1,3 +1,4 @@
+
 !! Copyright (C) 2015 M. Moreira
 !!
 !! This program is free software; you can redistribute it and/or modify
@@ -67,8 +68,8 @@ module run_angio_m
       type(sec_mesh_t), allocatable :: necrotic_tissue(:)
       type(tip_cell_t), allocatable :: tipc(:)
       ! vegf related variables
-      integer :: n_source = 0, source_max, n_source_initial
-      integer, allocatable :: vegf_xyz(:,:)
+      integer :: n_source = 0, source_max, n_source_initial, np_vegf_all
+      integer, allocatable :: vegf_xyz(:,:), vegf_all(:,:)
       ! misc
       integer :: nstep, counter = 0, ndim, output_period, extra_steps
       real :: hs, time_init, time_end, ctime, phi_max
@@ -83,7 +84,9 @@ module run_angio_m
       ! n_source  - number of vegf sources
       integer :: np_vegf_s, np_tip_s, np_tip_all, n_tipcell = 0
       integer, allocatable :: vegf_s(:,:), tip_s(:,:), tip_all(:,:), d2sphere(:), sphere(:,:)
-      integer :: flow_count, calc_flow_period=20, np_sphere
+      integer :: flow_count, calc_flow_period, np_sphere
+      real :: flow_temp, phi_temp, grad_T
+      calc_flow_period = 50
       flow_count = 0
 
       ! initializing parameters
@@ -103,7 +106,7 @@ module run_angio_m
       ! phi max inside etc
       phi_max = (prolif_rate*vegf_p*cell_radius)/(2.d0*chi*vegf_grad_max)
       
-	
+
       ! allocating matrices and vectors
       ALLOCATE(lxyz(np_part,1:3))
       ALLOCATE(lxyz_inv(-Lsize(1)-boundary_points:Lsize(1)+boundary_points, &
@@ -122,8 +125,7 @@ module run_angio_m
       ALLOCATE(tip_s(1:300,1:3))
       ALLOCATE(tip_all(1:500,1:3))
       
-
-
+  
       ! initializing tip cell points     
       call spherical_surface(cell_radius, tip_s, np_tip_s, 0.2)  ! spherical surface increments of tip cell      
       call gen_cell_points(cell_radius, tip_all, np_tip_all)     ! all points of tip cell
@@ -135,6 +137,7 @@ module run_angio_m
 
       ! initializing points for the vegf sources 
       call spherical_surface(diff_oxy_length, vegf_s, np_vegf_s, 0.2)  
+    !  call gen_cell_points(diff_oxy_length, vegf_all, np_vegf_all)  
 
       ! initializing space matrices
       call space_init(Lsize, lxyz, lxyz_inv, boundary_points, np, ndim, periodic)
@@ -161,6 +164,18 @@ module run_angio_m
 
       write(*,'(A)') "Initiating the core program..."      
 
+      
+
+    !  call init_from_file(cell, lxyz_inv, np, 159396, 'co4' , '150000')
+    !  call dderivatives_grad(cell, gg, np, lxyz, lxyz_inv, dr)
+
+    !  OPEN (UNIT=12,FILE=trim(dir_name//'/grad.xyz'))
+    !  do ip=1, np
+    !     grad_T = sqrt(gg(ip,1)**2+gg(ip,2)**2+gg(ip,3)**2)
+    !     write(12,'(I5,I5,I5,F10.4,F10.4,F10.4)') lxyz(ip,1:3), grad_T, cell(ip)%T, cell(ip)%phi
+    !  end do
+    !  CLOSE(12)
+    !stop
       ! saving the initial condition
       OPEN (UNIT=12,FILE=trim(dir_name//'/phii.xyz'))
       OPEN (UNIT=22,FILE=trim(dir_name//'/ti.xyz'))
@@ -183,6 +198,7 @@ module run_angio_m
 
          ! the program will run extra_steps steps after the last source deactivation
          if(n_source.eq.0) then
+            write(*,'(A,I5,A)') "All sources were deactivated. Running", extra_steps, "extra steps."
             tstep = nstep + extra_steps
             n_source = -1
          end if
@@ -196,7 +212,7 @@ module run_angio_m
  
          ! calculating gradient of vegf
          call dderivatives_grad(cell, gg, np, lxyz, lxyz_inv, dr)
- 
+
          ! ETC search
          call etc_search(cell, tipc, gg, Lsize, lxyz, lxyz_inv, notch_distance, n_tipcell, tip_s, &
                          vegf_c, nstep, vegf_grad_min, np, cell_radius, n_max_tipc, np_tip_s, periodic)
@@ -218,7 +234,7 @@ module run_angio_m
             !+ depletion_weight*(cell(ip)%phi-5.0)*(cell(ip)%phi + 1.0)*(( 1.d0 + necrotic_tissue(ip)%phi)**2) &
             !*(necrotic_tissue(ip)%phi-2.0 )*(0.0625)
          end do
-       
+      
          ! Calculating laplacian of mu 
          call dderivatives_lapl(cell%mu, cell%lapl_mu, np, dr, lxyz, lxyz_inv)
     
@@ -247,7 +263,7 @@ module run_angio_m
 
          end do
         
-   
+  
          if (n_tipcell>0) then
             
             call etc_move(cell, tipc, gg, lxyz, lxyz_inv, Lsize, vegf_c, vegf_grad_min, vegf_grad_max, tip_s, &
@@ -268,18 +284,19 @@ module run_angio_m
                   phis(ip) = -1.d0
                end if
             end do
-           
+
             call thinning_run(phis, lxyz, lxyz_inv, lsize, np)    
-         
+
             call flow_calc(phis, flow, lxyz, lxyz_inv, Lsize, np, nstep)    
-         
+
             call fill_vessels(flow_full, cell%phi, Lsize, lxyz, lxyz_inv, flow, d2sphere, sphere, np, np_sphere)
-         
-            call source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic, flow_full)
-         
+
+            call source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv,&
+                 np_vegf_s, Lsize, periodic, flow_full, vegf_all, np_vegf_all)
+
 
          end if
-
+         
          call CPU_TIME(time_end)
 
          ctime = ctime + (time_end - time_init)
@@ -294,8 +311,7 @@ module run_angio_m
             end if
          end if
          
-     
-
+  
          ! output
          
          counter = counter + 1 
@@ -315,16 +331,16 @@ module run_angio_m
             do ip=1, np
                
                if(phis(ip)>0.and.thinning) then
-                  write(nstep+2,'(I10,I10,I10,F10.2,F10.2)') lxyz(ip,1:3), phis(ip), flow(ip)
+                  write(nstep+2,'(I10,I10,I10,F10.2,F10.4)') lxyz(ip,1:3), phis(ip), flow(ip)
                end if
                
                if(cell(ip)%phi>0) then
                   
-                 write(nstep,'(I10,I10,I10,F10.2,F10.3)') lxyz(ip,1:3), cell(ip)%phi, flow_full(ip)
+                 write(nstep,'(I10,I10,I10,F10.2,F10.4)') lxyz(ip,1:3), cell(ip)%phi, flow_full(ip)
                end if
-               if(lxyz(ip,3).eq.0) then
-                  write(nstep+1,'(I10,I10,F10.2)') lxyz(ip,1:2), cell(ip)%T
-               end if
+               !if(lxyz(ip,3).eq.0) then
+                  write(nstep+1,'(I10,I10,I10,F10.3)') lxyz(ip,1:3), cell(ip)%T
+               !end if
             end do
             if(thinning) close(nstep+2)
             close(nstep+1)
@@ -349,7 +365,8 @@ module run_angio_m
       close(333)
       close(222)
       
-
+      DEALLOCATE(d2sphere)
+      DEALLOCATE(sphere)
       DEALLOCATE(lxyz)
       DEALLOCATE(lxyz_inv)
       DEALLOCATE(cell)
@@ -367,15 +384,18 @@ module run_angio_m
       
     end subroutine run_angio
 
+
+
     subroutine fill_vessels(flow_full, phi, Lsize, lxyz, lxyz_inv, flow, d2sphere, sphere, np, nps)
 
       implicit none
 
-      real, intent(in) :: phi(:)
+      integer, intent(in) :: np, nps, Lsize(3)
+      real, intent(in) :: phi(1:np)
       real, allocatable, intent(inout) :: flow_full(:)
       real, allocatable, intent(in) :: flow(:)
       integer, allocatable, intent(in) :: sphere(:,:), d2sphere(:), lxyz(:,:), lxyz_inv(:,:,:)
-      integer, intent(in) :: np, nps, Lsize(3)
+
       ! intern variables
 	  real :: hs(1:3)
       integer :: ip, ips, d2temp,ip2, r(1:3)
@@ -647,7 +667,7 @@ module run_angio_m
       tip_points(:) = -1.d0
 
       ! deactivating tip cells
-      
+
       do i=1, n_tipcell
          ip = tipc(i)%ip
          grad_T = gg(ip,1)*gg(ip,1) + gg(ip,2)*gg(ip,2) + gg(ip,3)*gg(ip,3)
@@ -674,10 +694,11 @@ module run_angio_m
          
          ! avoiding ETCs and Hypoxic Cells superposition
          grad(1:3) = gg(ip,1:3)
-      
+
          if(grid_cell_domain(ip)> 0) then
             
             relative_pos(1:3) =  vegf_xyz(grid_cell_domain(ip),1:3)  - lxyz(ip,1:3)
+
             relative_image(1:ndim) = 2.d0*Lsize(1:ndim) -unitary(1:ndim)- abs(relative_pos(1:ndim))        
 
             do jdim=1, ndim
@@ -693,17 +714,16 @@ module run_angio_m
             GG_projection =  grad(1)*relative_pos(1) + grad(2)*relative_pos(2) + grad(3)*relative_pos(3)     
      
             relative_pos(1:3) = relative_pos(1:3)*GG_projection
-
+               
             GG_rejection(1:3) = grad(1:3) - relative_pos(1:3)
 
             grad(1:3) = GG_rejection(1:3)
-
+            
          end if
-        
+
     
          grad_T = grad(1)*grad(1) + grad(2)*grad(2) + grad(3)*grad(3)
          grad_T = grad_T**(0.5)
-
 
          if(grad_T<vegf_grad_min) grad_T = vegf_grad_min
 
@@ -718,7 +738,7 @@ module run_angio_m
          tipc(ip2)%x = tipc(ip2)%x + dx_vec(1)
          tipc(ip2)%y = tipc(ip2)%y + dx_vec(2)
          tipc(ip2)%z = tipc(ip2)%z + dx_vec(3)
-        
+      
          ! boundary condiditions
          
          if(tipc(ip2)%x>Lsize(1) - 1 ) then
@@ -751,7 +771,7 @@ module run_angio_m
               int(anint( tipc(ip2)%z)) ) ! new ip global
 
          ! Calculating Phi_c inside tipcell
-           
+          
          tipc(ip2)%phi =  (cell(int(tipc(ip2)%ip))%alpha_p*cell_radius)/&
               (2.d8*chi*grad_T*abs(temp)) ! phi_c
 
@@ -759,7 +779,7 @@ module run_angio_m
          if(phi_boolean(int(tipc(ip2)%ip))<0) then
             cell(int( tipc(ip2)%ip ))%phi = tipc(ip2)%phi
          end if
-           
+
          do l=1, np_tip_all
             
             i = int(anint(tipc(ip2)%x  + tip_all(l,1)))
@@ -782,9 +802,8 @@ module run_angio_m
             
          end do
 
-        
       end do
-      
+
       do ip=1, np
          if(tip_points(ip)>0) then
             cell(ip)%T = cell(ip)%T +  dt*cell(ip)%consumption
@@ -798,15 +817,16 @@ module run_angio_m
     
     
     
-    subroutine source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic, flow)
+    subroutine source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv,&
+         np_vegf_s, Lsize, periodic, flow, vegf_all, np_vegf_all)
       
       implicit none
       
       type(mesh_t), allocatable, intent(inout) :: cell(:)
-      real, allocatable, optional, intent(inout) :: flow(:)
-      integer, allocatable, intent(inout) :: vegf_xyz(:,:)
-      integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:,:), vegf_s(:,:)
-      integer, intent(in) :: Lsize(3), np_vegf_s
+      real, allocatable,  intent(in) :: flow(:)
+      integer, allocatable, intent(in) :: vegf_xyz(:,:)
+      integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:,:), vegf_s(:,:), vegf_all(:,:)
+      integer, intent(in) :: Lsize(3), np_vegf_s, np_vegf_all
       integer, intent(inout) :: n_source
       logical, intent(in) :: periodic
       ! internal
@@ -819,11 +839,11 @@ module run_angio_m
       n_source_o = n_source
       
       !sair = .false.
-
-      deactivated = .false.
+    
 
       do i=1, n_source_o
-         
+         deactivated = .false.
+
          ip_source = lxyz_inv(vegf_xyz(i,1),vegf_xyz(i,2),vegf_xyz(i,3))
          
          do j=1, np_vegf_s
@@ -834,16 +854,12 @@ module run_angio_m
             
             ip = lxyz_inv(r(1),r(2),r(3))
 
-            if(present(flow)) then
-               cutoff_check = flow(ip)
-            else
-               cutoff_check = cell(ip)%phi
-            end if
 
-            if( cutoff_check>0.0) then
+            if( 10.00*flow(ip)>0.00001) then
 
                deactivated = .true.
                cell(ip_source)%source = -1
+               
                !write(*,*) "hypoxic cell deactivated (x,y,z), n_source:", lxyz(ip_source,1:3), n_source -1
                !temp(1:3) = vegf_xyz(i,1:3)
                !vegf_xyz(i,1:3) = vegf_xyz(n_source,1:3)
@@ -856,7 +872,37 @@ module run_angio_m
 
          end do
 
-         if(.not.deactivated) cell(ip_source)%source = 1
+         if(.not.deactivated) then
+
+            cell(ip_source)%T = 1.0
+            cell(ip_source)%source = 1
+
+            !do j=1, np_vegf_all
+            
+            !   r(1) = vegf_xyz(i,1) + vegf_all(j,1)
+            !   r(2) = vegf_xyz(i,2) + vegf_all(j,2)
+            !   r(3) = vegf_xyz(i,3) + vegf_all(j,3)
+            
+            !   ip = lxyz_inv(r(1),r(2),r(3))
+
+            !   cell(ip)%T = 1.d0
+            !   cell(ip)%source = 1.d0
+
+            !end do
+         else
+
+            !do j=1, np_vegf_all
+            
+            !   r(1) = vegf_xyz(i,1) + vegf_all(j,1)
+            !   r(2) = vegf_xyz(i,2) + vegf_all(j,2)
+            !   r(3) = vegf_xyz(i,3) + vegf_all(j,3)
+               
+            !   ip = lxyz_inv(r(1),r(2),r(3))
+               
+            cell(ip)%source = -1.d0
+            !end do
+
+         end if
 
          !if(sair) EXIT
 
@@ -1115,18 +1161,20 @@ module run_angio_m
 
                if( abs(i)>Lsize(1)-hs(1)) then
                   boundary = .true.               
-                  l = i - SIGN(1,i)*(2*Lsize(1))
+                  l = i - SIGN(1,i)*(2*Lsize(1)-1)
+       
+
                end if
 
                if( abs(j)>Lsize(2)-hs(2)) then
                   boundary = .true.               
-                  m = j  - SIGN(1,j)*(2*Lsize(2))
+                  m = j  - SIGN(1,j)*(2*Lsize(2)-1)
                end if
 
                if( abs(k)>Lsize(3)-hs(3)) then
                   boundary = .true.
                   if(periodic) then
-                     n = k - SIGN(1,k)*(2*Lsize(3))
+                     n = k - SIGN(1,k)*(2*Lsize(3)-1)
                   else
                      n = k - SIGN(1,k)
                   end if
@@ -1261,7 +1309,7 @@ module run_angio_m
       call getlog(username) 
       write(*,'(A)') "                                Running Angio with Blood flow"
       write(*,'(A)') "       "
-      write(*,'(A)') "Version        :       5.2.s"
+      write(*,'(A)') "Version        :       5.3.s"
       write(*,'(A,A)') "Locate         :       ", trim(cwd)
       write(*,'(A,A)') "User           :       ", trim(username)
       write(*,'(A)') "Developer      :       Moreira, M."
@@ -1314,7 +1362,7 @@ module run_angio_m
       M_Pi = 3.14159265359
       ! Note:
       ! No intrinsic exists to convert between a numeric value and a formatted character 
-      ! string representation  for instance, given the CHARACTER value '154',
+      ! string representation for instance, given the CHARACTER value '154',
       ! obtaining an INTEGER or REAL value with the value 154, or vice versa.
       ! Instead, this functionality is provided by internal-file I/O, 
       ! as in the following example: 
@@ -1449,5 +1497,36 @@ module run_angio_m
          return 
        end function ran2 
        
+
+    subroutine init_from_file(cell, lxyz_inv, np, np_phi, dir_name, file_id)
+
+      implicit none
+      ! external
+      type(mesh_t), allocatable, intent(inout) :: cell(:)
+      integer, intent(in) :: np, np_phi
+      integer, allocatable, intent(in) :: lxyz_inv(:,:,:)
+      character(3), intent(in) :: dir_name
+      character(6), intent(in) :: file_id
+      ! private
+      integer :: r(3), ip
+      real :: phi_temp
+      
+      open(UNIT=100, FILE=dir_name//'/phi'//trim(file_id)//'.xyz')
+      open(UNIT=200, FILE=dir_name//'/t'//trim(file_id)//'.xyz')
+      cell(:)%phi = -1.d0
+      do ip=1, np
+         read(200,*) r(1:3), cell(ip)%T
+      end do
+
+      do ip=1, np_phi
+         read(100,*) r(1:3), phi_temp
+
+         cell(lxyz_inv(r(1),r(2),r(3) ) )%phi = phi_temp
+      end do
+
+      close(100)
+      close(200)
+      
+    end subroutine init_from_file
 
   end module run_angio_m
