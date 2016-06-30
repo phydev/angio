@@ -412,21 +412,18 @@ module init_m
       integer :: r(3), ip
       real :: phi_temp
       
-      open(UNIT=100, FILE=dir_name//'/phi'//trim(file_id)//'.xyz')
-      open(UNIT=200, FILE=dir_name//'/t'//trim(file_id)//'.xyz')
-      cell(:)%phi = -1.d0
-      do ip=1, np
-         read(200,*) r(1:3), cell(ip)%T
-      end do
-
+      open(UNIT=100, FILE=dir_name//'/phi'//trim(file_id)//'.xyz')    
+      cell(:)%phi = -1.d0    
       do ip=1, np_phi
          read(100,*) r(1:3), phi_temp
-
          cell(lxyz_inv(r(1),r(2),r(3) ) )%phi = phi_temp
       end do
-
       close(100)
-      close(200)
+      !open(UNIT=200, FILE=dir_name//'/t'//trim(file_id)//'.xyz')
+      !do ip=1, np
+      !   read(200,*) r(1:3), cell(ip)%T
+      !end do
+      !close(200)     
       
     end subroutine init_from_file
 

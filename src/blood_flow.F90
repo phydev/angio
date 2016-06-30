@@ -89,7 +89,6 @@ contains
         
 
                    if ( phis(ip2).gt.0.and.ip2.ne.ip ) then
-                      
                       neighbours(ip) = neighbours(ip) + 1.0
                    end if
 
@@ -151,8 +150,6 @@ contains
     ! searching by nodes neighbours
     paths(:) = 0
 
-
-
     do ip=1, np_nodes
 
        np_path = 0 
@@ -169,7 +166,6 @@ contains
                 x = lxyz(nodes(ip),1) + i 
                 y = lxyz(nodes(ip),2) + j 
                 z = lxyz(nodes(ip),3) + k 
-
 
                 ip2 = lxyz_inv(x,y,z)
 
@@ -266,7 +262,7 @@ contains
                                nodes_connecteds = nodes_connecteds + 1
 
                                path_length_v(n) = path_length
-                               path_ip(path_length) = ip2 ! ip_length - 1 , why?
+                               path_ip(path_length) = ip2
                                Lmn(1:path_length, n) = path_ip(1:path_length)
                                Lmn(path_length, n) = Lmn(path_length, n) + paths(n)
 
@@ -290,8 +286,8 @@ contains
 
                          if(found.eq.0) then 
                             path_length = path_length + 1
-                            path_ip(path_length) = ip2!paths(n)  ! saving the path for later identify the flow 
-                            Lmn(path_length,np_path) = ip2! paths(n)
+                            path_ip(path_length) = ip2  ! saving the path for later identify the flow 
+                            Lmn(path_length,np_path) = ip2
                             ip_old = paths(n) 
                             path_length_v(n) = path_length
                             paths(n) = ip2 
@@ -367,10 +363,7 @@ contains
     call DGESV(np_nodes, 1, permittivity, np_nodes, IPIV, B, np_nodes, ierr)
 
     do ip=1, np
-       if(hydro(ip)%m.ne.hydro(ip)%n) then             
-       !  write(*,*) B(hydro(ip)%m), B(hydro(ip)%n), nodes_matrix(hydro(ip)%m, hydro(ip)%n ), ip
-          !     flow(ip) = abs( (B(hydro(ip)%m) - B(hydro(ip)%n) ))
-          
+       if(hydro(ip)%m.ne.hydro(ip)%n) then                      
           flow(ip) =  abs((B(hydro(ip)%m) - B(hydro(ip)%n))/(real(nodes_matrix(hydro(ip)%m, hydro(ip)%n ))) )
        else
           flow(ip) = -1.0

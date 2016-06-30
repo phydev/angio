@@ -69,7 +69,7 @@ module global_m
       logical, public :: thinning
       logical, public :: calculate_flow
       integer, public :: flow_count, calc_flow_period, np_sphere
-      real, public, allocatable :: phis(:)
+      real, public, allocatable :: phis(:), graph(:)
       ! np_vegf_s  - number of points on the spherical surface representing the limit signaling of vegf source
       ! np_tip_s   - number of points on the spherical surface representing tip cell limits
       ! np_tip_all - all points inside tip cell

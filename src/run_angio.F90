@@ -27,7 +27,8 @@ module run_angio_m
   use source_m
   use blood_flow_m
   use misc_m
-  
+  use congraph_m
+
   implicit none
   
   private
@@ -40,7 +41,7 @@ module run_angio_m
     subroutine run_angio()
 
       implicit none
-      
+
 
       ! initializing parameters
       call  parameters_init(cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length,&
@@ -76,6 +77,7 @@ module run_angio_m
       ALLOCATE(lapl(1:np))
       ALLOCATE(f(1:np))
       ALLOCATE(phis(1:np))
+      ALLOCATE(graph(1:np))
       ! surfaces and points from spheres
       ALLOCATE(vegf_s(1:10000,1:3))
       ALLOCATE(tip_s(1:300,1:3))
@@ -124,10 +126,9 @@ module run_angio_m
       ! just the fields Phi and T
       ! use on your own risk!
       ! write(*,'(A)') "Loading previous system..."
-      ! file_id = ' 73000'
+      ! file_id = '10000'
       !                     field, ...,    ..., ... , directory, ...
-      ! call init_from_file(cell, lxyz_inv, np, np_phi, 'db6' ,  file_id)
-
+      ! call init_from_file(cell, lxyz_inv, np, 702,'tst' ,  file_id)
 
       write(*,'(A)') "Initiating the core program..."      
 
@@ -142,8 +143,6 @@ module run_angio_m
       end do
       close(12)
       close(22)
-
-
 
       nstep = 0
       calc_flow_period = output_period
@@ -247,7 +246,8 @@ module run_angio_m
                 end do
 
                 call thinning_run(phis, lxyz, lxyz_inv, lsize, np)
-                call flow_calc(phis, flow, lxyz, lxyz_inv, Lsize, np, nstep)
+                call verify_graph_connection(phis, graph, lxyz_inv(0,0,-30), lxyz, lxyz_inv)
+                call flow_calc(graph, flow, lxyz, lxyz_inv, Lsize, np, nstep)
                 call fill_vessels(flow_full, cell%phi, Lsize, lxyz, lxyz_inv, flow, d2sphere, sphere, np, np_sphere)
                 call source_deactivate_flow(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv,&
                      np_vegf_s, Lsize, periodic, flow_full, vegf_all, np_vegf_all)
@@ -300,9 +300,9 @@ module run_angio_m
 
                  write(nstep,'(I10,I10,I10,F10.2,F10.4)') lxyz(ip,1:3), cell(ip)%phi, flow_full(ip)
                end if
-               !if(lxyz(ip,3).eq.0) then
-                  write(nstep+1,'(I10,I10,I10,F10.3)') lxyz(ip,1:3), cell(ip)%T
-               !end if
+               if(lxyz(ip,3).eq.0) then
+                  write(nstep+1,'(I10,I10,F10.3)') lxyz(ip,1:2), cell(ip)%T
+               end if
             end do
             if(thinning) close(nstep+2)
             close(nstep+1)
