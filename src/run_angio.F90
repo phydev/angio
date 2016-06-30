@@ -347,7 +347,7 @@ module run_angio_m
       DEALLOCATE(vegf_all)
       DEALLOCATE(flow)
       DEALLOCATE(flow_full)      
-     
+      DEALLOCATE(graph)     
       
     end subroutine run_angio
 
