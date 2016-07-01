@@ -56,10 +56,10 @@ module etc_dynamics_m
 
       activated = .false.
 
-	  
+ 
       do ip=1, np
          
-		 
+ 
          if(cell(ip)%phi>0.9) then ! phi=1
             
             if(cell(ip)%T>vegf_c) then ! T>Tc
@@ -162,7 +162,7 @@ module etc_dynamics_m
 
     subroutine etc_move(cell, tipc, gg, lxyz, lxyz_inv, Lsize, vegf_c, vegf_grad_min, vegf_grad_max, tip_s, &
                tip_all, n_tipcell, phi_max, nstep, dt, chi, cell_radius, np_tip_all, grid_cell_domain, n_source, &
-			   vegf_xyz, ndim, np_tip_s, np, periodic)
+   vegf_xyz, ndim, np_tip_s, np, periodic)
 
       implicit none
 
@@ -198,8 +198,6 @@ module etc_dynamics_m
          
          if(cell(ip)%T<vegf_c.or.grad_T<vegf_grad_min) then
             write(*,'(A,I10,I10)') "deactivated - n_tip, nstep:", n_tipcell-1, nstep
-            write(*,'(I10,I10,I10)') lxyz(ip,1:3)
-            write(*,*) cell(ip)%T, grad_T
             tipc(i)%ip = tipc(n_tipcell)%ip
             tipc(i)%x = tipc(n_tipcell)%x
             tipc(i)%y = tipc(n_tipcell)%y
