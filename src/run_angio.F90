@@ -15,9 +15,9 @@
 !! Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 !! 02111-1307, USA.
 !!
-!! 
+!!
 
-module run_angio_m  
+module run_angio_m
 
   use global_m
   use thinning_m
@@ -30,14 +30,14 @@ module run_angio_m
   use congraph_m
 
   implicit none
-  
+
   private
-  
+
   public :: run_angio
-  
+
 
   contains
-  
+
     subroutine run_angio()
 
       implicit none
@@ -49,7 +49,7 @@ module run_angio_m
       boundary_points, source_max, vegf_grad_min, vegf_grad_max, depletion_weight, output_period, extra_steps, &
       n_max_tipc, thinning, periodic)
 
-	
+
       ! notch distance
       notch_distance = (4.d0*cell_radius)**2
       ! minimum vegf gradient for branch ** 2
@@ -62,8 +62,8 @@ module run_angio_m
       ! flow
       calculate_flow = .true.
       calc_flow_period = 50
-      flow_count = 0      
-	
+      flow_count = 0
+
       ! allocating matrices and vectors
       ALLOCATE(lxyz(np_part,1:3))
       ALLOCATE(lxyz_inv(-Lsize(1)-boundary_points:Lsize(1)+boundary_points, &
@@ -83,13 +83,13 @@ module run_angio_m
       ALLOCATE(tip_s(1:300,1:3))
       ALLOCATE(tip_all(1:500,1:3))
       ALLOCATE(flow(1:np))
-      ALLOCATE(flow_full(1:np))      
+      ALLOCATE(flow_full(1:np))
 
-      ! initializing tip cell points     
-      call spherical_surface(cell_radius, tip_s, np_tip_s, 0.2)  ! spherical surface increments of tip cell      
+      ! initializing tip cell points
+      call spherical_surface(cell_radius, tip_s, np_tip_s, 0.2)  ! spherical surface increments of tip cell
       call gen_cell_points(cell_radius, tip_all, np_tip_all)     ! all points of tip cell
 
-      ! initializing points for the vegf sources 
+      ! initializing points for the vegf sources
       ! initializing points to fill with blood flow
       ALLOCATE(d2sphere(1:3000))
       ALLOCATE(sphere(1:3000,1:3))
@@ -113,13 +113,13 @@ module run_angio_m
       call gen_grid_cell_domain(grid_cell_domain, vegf_xyz, Lsize, lxyz, np, n_source, cell_radius, ndim)
 
 
-      ! printing header 
-      call print_header(Lsize, n_source, dir_name, periodic) 
-  
-      ! Cahn-Hilliard steps only for the necrotic tissue 
+      ! printing header
+      call print_header(Lsize, n_source, dir_name, periodic)
+
+      ! Cahn-Hilliard steps only for the necrotic tissue
       call cahn_hilliard(necrotic_tissue, 100, dt, dr, np, interface_width, lxyz, lxyz_inv, dir_name)
-  
-      write(*,'(A)') "Running Cahn-Hilliard steps for the hypoxic tissue... done!" 
+
+      write(*,'(A)') "Running Cahn-Hilliard steps for the hypoxic tissue... done!"
 
       ! init from file
       ! caution: this feature can't load the tip cells
@@ -130,7 +130,7 @@ module run_angio_m
       !                     field, ...,    ..., ... , directory, ...
       ! call init_from_file(cell, lxyz_inv, np, 702,'tst' ,  file_id)
 
-      write(*,'(A)') "Initiating the core program..."      
+      write(*,'(A)') "Initiating the core program..."
 
       ! saving the initial condition
       OPEN (UNIT=12,FILE=trim(dir_name//'/phii.xyz'))
@@ -158,13 +158,13 @@ module run_angio_m
 
          if(n_tipcell>0) then
             calc_flow_period = 50
-         end if         
-       
+         end if
+
          call CPU_TIME(time_init)
- 
+
          ! calculating gradient of vegf
          call dderivatives_grad(cell, gg, np, lxyz, lxyz_inv, dr)
- 
+
          ! ETC search
          call etc_search(cell, tipc, gg, Lsize, lxyz, lxyz_inv, notch_distance, n_tipcell, tip_s, &
                          vegf_c, nstep, vegf_grad_min, np, cell_radius, n_max_tipc, np_tip_s, periodic)
@@ -175,7 +175,7 @@ module run_angio_m
          cell(1:np)%lapl_phi = lapl(1:np)
 
 
-         ! Chemical potential:  phi**3 - phi - epsilon*laplacian(phi ) 
+         ! Chemical potential:  phi**3 - phi - epsilon*laplacian(phi )
          do ip = 1, np
             cell(ip)%mu = cell(ip)%phi * cell(ip)%phi *cell(ip)%phi &
                  - cell(ip)%phi - interface_width*cell(ip)%lapl_phi&
@@ -184,24 +184,24 @@ module run_angio_m
 
             ! Travasso 2D
             !+ depletion_weight*(cell(ip)%phi**2 - 1)*(( 1.d0 + necrotic_tissue(ip)%phi)**2) &
-            !*(necrotic_tissue(ip)%phi-2 )*(0.1875) ) 
+            !*(necrotic_tissue(ip)%phi-2 )*(0.1875) )
             ! Nonomura 3D
             !+ depletion_weight*(cell(ip)%phi-5.0)*(cell(ip)%phi + 1.0)*(( 1.d0 + necrotic_tissue(ip)%phi)**2) &
             !*(necrotic_tissue(ip)%phi-2.0 )*(0.0625)
          end do
-       
-         ! Calculating laplacian of mu 
+
+         ! Calculating laplacian of mu
          f(1:np) = cell(1:np)%mu
          call dderivatives_lapl(f, lapl, np, dr, lxyz, lxyz_inv)
          cell(1:np)%lapl_mu = lapl(1:np)
-    
+
          ! Calculating laplacian of T
          f(1:np) = cell(1:np)%T
          call dderivatives_lapl(f, lapl, np, dr, lxyz, lxyz_inv)
          cell(1:np)%lapl_T = lapl(1:np)
 
          ! Temporal evolution phi(t+dt) and T(t+dt)
-         
+
          do ip = 1, np
 
             ! calculating alpha_p
@@ -210,30 +210,30 @@ module run_angio_m
             else
                cell(ip)%alpha_p = prolif_rate*cell(ip)%T
             end if
-            
+
             hs = heaviside(cell(ip)%phi)
-            
+
             if(cell(ip)%source<1) then
                cell(ip)%consumption = vegf_rate*cell(ip)%T*cell(ip)%phi*hs
                cell(ip)%T = cell(ip)%T + dt*(diffusion_const*cell(ip)%lapl_T - cell(ip)%consumption)
             end if
-            
-            cell(ip)%phi = cell(ip)%phi + dt*(cell(ip)%lapl_mu + cell(ip)%alpha_p*cell(ip)%phi*hs) 
+
+            cell(ip)%phi = cell(ip)%phi + dt*(cell(ip)%lapl_mu + cell(ip)%alpha_p*cell(ip)%phi*hs)
 
          end do
-        
-   
+
+
          if (n_tipcell>0) then
-            
+
             call etc_move(cell, tipc, gg, lxyz, lxyz_inv, Lsize, vegf_c, vegf_grad_min, vegf_grad_max, tip_s, &
                   tip_all, n_tipcell, phi_max, nstep, dt, chi, cell_radius, np_tip_all, grid_cell_domain, n_source_initial,&
                   vegf_xyz, ndim, np_tip_s, np, periodic)
-           
-         end if ! if n_tipcell > 0	 
 
-         flow_count = flow_count + 1	
+         end if ! if n_tipcell > 0
+
+         flow_count = flow_count + 1
  	 if(calculate_flow) then
-	 
+
 	   if(flow_count.eq.calc_flow_period .or. counter+1.eq.output_period) then
                 flow(:) = -1.d0
                 flow_count = 0
@@ -246,37 +246,42 @@ module run_angio_m
                 end do
 
                 call thinning_run(phis, lxyz, lxyz_inv, lsize, np)
-                call verify_graph_connection(phis, graph, lxyz_inv(0,0,-30), lxyz, lxyz_inv)
+                do i=-5,5
+                  do j=1-5,5
+                    if(phis(lxyz_inv(i,j,-Lsize(3))).gt.0) initial_node = lxyz_inv(i,j,-Lsize(3))
+                  end do
+                end do
+                call verify_graph_connection(phis, graph, initial_node, lxyz, lxyz_inv)
                 call flow_calc(graph, flow, lxyz, lxyz_inv, Lsize, np, nstep)
                 call fill_vessels(flow_full, cell%phi, Lsize, lxyz, lxyz_inv, flow, d2sphere, sphere, np, np_sphere)
                 call source_deactivate_flow(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv,&
                      np_vegf_s, Lsize, periodic, flow_full, vegf_all, np_vegf_all)
 
 
-	   end if 
- 	 else	
+	   end if
+ 	 else
                call source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic)
- 	 endif	
+ 	 endif
 
          call CPU_TIME(time_end)
 
          ctime = ctime + (time_end - time_init)
-         
+
          if(nstep.eq.100) then
             ctime = (ctime*(tstep-nstep) )/6000.d0
-            
+
             if( ctime>60.d0) then
                write(*,'(A,F10.2)') "Estimated time (hour): ",ctime/60.d0
             else
                write(*,'(A,F10.2)') "Estimated time (min): ",ctime
             end if
          end if
-         
-     
+
+
 
          ! output
-         
-         counter = counter + 1 
+
+         counter = counter + 1
 
          if(n_tipcell.eq.n_max_tipc) then
             counter = output_period
@@ -311,10 +316,10 @@ module run_angio_m
          ! end of the output
 
          if(n_tipcell.eq.n_max_tipc) EXIT
-         
-     
+
+
       end do
-      
+
 
       OPEN (UNIT=333,FILE=trim(dir_name//'/phi.xyz'))
       OPEN (UNIT=222,FILE=trim(dir_name//'/t.xyz'))
@@ -326,8 +331,8 @@ module run_angio_m
       end do
       close(333)
       close(222)
-      
-      
+
+
       DEALLOCATE(lxyz)
       DEALLOCATE(lxyz_inv)
       DEALLOCATE(cell)
@@ -346,13 +351,13 @@ module run_angio_m
       DEALLOCATE(sphere)
       DEALLOCATE(vegf_all)
       DEALLOCATE(flow)
-      DEALLOCATE(flow_full)      
-      DEALLOCATE(graph)     
-      
+      DEALLOCATE(flow_full)
+      DEALLOCATE(graph)
+
     end subroutine run_angio
 
   end module run_angio_m
- 
+
 
 !! Local Variables:
 !! mode: f90
