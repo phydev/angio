@@ -15,26 +15,26 @@
 !! Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 !! 02111-1307, USA.
 !!
-!! 
+!!
 
-module source_m  
+module source_m
 
   use global_m
   use misc_m
-  
+
   implicit none
-  
+
   private
-  
+
   public :: source_deactivate, fill_vessels, source_deactivate_flow
 
   contains
 
 
     subroutine source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic)
-      
+
       implicit none
-      
+
       type(mesh_t), allocatable, intent(inout) :: cell(:)
       integer, allocatable, intent(inout) :: vegf_xyz(:,:)
       integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:,:), vegf_s(:,:)
@@ -49,21 +49,21 @@ module source_m
       ! deactivating vegf sources
 
       n_source_o = n_source
-      
+
       !sair = .false.
 
       deactivated = .false.
 
       do i=1, n_source_o
-         
+
          ip_source = lxyz_inv(vegf_xyz(i,1),vegf_xyz(i,2),vegf_xyz(i,3))
-         
+
          do j=1, np_vegf_s
-            
+
             r(1) = vegf_xyz(i,1) + vegf_s(j,1)
             r(2) = vegf_xyz(i,2) + vegf_s(j,2)
             r(3) = vegf_xyz(i,3) + vegf_s(j,3)
-            
+
             ip = lxyz_inv(r(1),r(2),r(3))
 
 
@@ -89,9 +89,9 @@ module source_m
 
       end do
 
-      
+
     end subroutine source_deactivate
-    
+
 
     subroutine fill_vessels(flow_full, phi, Lsize, lxyz, lxyz_inv, flow, d2sphere, sphere, np, nps)
 
@@ -132,15 +132,15 @@ module source_m
     end subroutine fill_vessels
 
     subroutine source_deactivate_flow(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv,&
-         np_vegf_s, Lsize, periodic, flow, vegf_all, np_vegf_all)
+         np_vegf_s, Lsize, periodic, flow)!, vegf_all, np_vegf_all)
 
       implicit none
 
       type(mesh_t), allocatable, intent(inout) :: cell(:)
       real, allocatable,  intent(in) :: flow(:)
       integer, allocatable, intent(in) :: vegf_xyz(:,:)
-      integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:,:), vegf_s(:,:), vegf_all(:,:)
-      integer, intent(in) :: Lsize(3), np_vegf_s, np_vegf_all
+      integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:,:), vegf_s(:,:)!, vegf_all(:,:)
+      integer, intent(in) :: Lsize(3), np_vegf_s!, np_vegf_all
       integer, intent(inout) :: n_source
       logical, intent(in) :: periodic
       ! internal
@@ -229,7 +229,7 @@ module source_m
 
 
   end module source_m
- 
+
 
 !! Local Variables:
 !! mode: f90

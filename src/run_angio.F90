@@ -256,7 +256,7 @@ module run_angio_m
                 call flow_calc(graph, flow, lxyz, lxyz_inv, Lsize, np, nstep)
                 call fill_vessels(flow_full, cell%phi, Lsize, lxyz, lxyz_inv, flow, d2sphere, sphere, np, np_sphere)
                 call source_deactivate_flow(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv,&
-                     np_vegf_s, Lsize, periodic, flow_full, vegf_all, np_vegf_all)
+                     np_vegf_s, Lsize, periodic, flow_full) !, vegf_all, np_vegf_all)
 
 
 	   end if
@@ -363,7 +363,6 @@ module run_angio_m
       DEALLOCATE(grid_cell_domain)
       DEALLOCATE(d2sphere)
       DEALLOCATE(sphere)
-      DEALLOCATE(vegf_all)
       DEALLOCATE(flow)
       DEALLOCATE(flow_full)
       DEALLOCATE(graph)
