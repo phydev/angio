@@ -15,18 +15,18 @@
 !! Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 !! 02111-1307, USA.
 !!
-!! 
+!!
 
-module init_m  
+module init_m
 
   use global_m
   use misc_m
- 
-  
+
+
   implicit none
-  
+
   private
-  
+
   public :: simul_box_init, space_init, parameters_init, print_header, init_from_file
 
   contains
@@ -34,9 +34,9 @@ module init_m
 
     subroutine simul_box_init(cell, necrotic_tissue, necrotic_all, cell_radius, lxyz, lxyz_inv, Lsize,&
          vegf_xyz, vegf_source_conc, source_max, n_source, np, diff_oxy_length, vessel_radius, np_necrotic_all, ndim, iseed)
-      
+
       implicit none
-      
+
       ! input variables
       type(mesh_t), allocatable, intent(inout) :: cell(:)
       type(sec_mesh_t), allocatable, intent(inout) :: necrotic_tissue(:)
@@ -50,16 +50,16 @@ module init_m
       integer :: ip_source, ip, i, j, k, l, m, sinal, i_nec, j_nec, k_nec, attempt
       real :: r_n, dr, ij_radius, frontier_radius, distance(1:3), distance_abs
       logical :: superposition
-      
+
       frontier_radius = real(min(Lsize(1),Lsize(2) )) - 2.d0*cell_radius
 
       ! initializing vessel and ECM
       do ip = 1, np
-         
+
          i = lxyz(ip,1)
          j = lxyz(ip,2)
          k = lxyz(ip,3)
-         
+
          necrotic_tissue(ip)%phi = -1.d0
 
          ij_radius = sqrt( real((i)**2 + (j)**2))
@@ -69,7 +69,7 @@ module init_m
             cell(ip)%T = 0.d0
             cell(ip)%source = 0
          else
-            cell(ip)%phi = -1.d0   
+            cell(ip)%phi = -1.d0
             cell(ip)%source = 0
             cell(ip)%T = 0.d0
          end if
@@ -84,7 +84,7 @@ module init_m
          if(ij_radius> vessel_radius+diff_oxy_length) then
             cell(ip)% T = vegf_source_conc
          end if
-         
+
       end do
 
 
@@ -92,28 +92,28 @@ module init_m
       n_source = 0
       attempt = 0
       ! random distribution
-      do while (attempt<1000) 
+      do while (attempt<1000)
 
          attempt = attempt + 1
-         
+
          do ip_source=1, source_max
-            
+
             r_n = ran2(iseed)
             ip = int(anint(r_n*np))
-            
+
             i = lxyz(ip,1)
             j = lxyz(ip,2)
-            k = lxyz(ip,3)  
+            k = lxyz(ip,3)
 
             ij_radius = sqrt( real((i)**2 + (j)**2))
 
             if ( ij_radius > vessel_radius+diff_oxy_length &
                  .and. abs(k)<Lsize(3)-cell_radius .and. &
                  ij_radius < frontier_radius ) then
-               
-               ! verifying superposition 
+
+               ! verifying superposition
                superposition = .false.
-               
+
                do l=1, n_source
 
                   ! minimum image method
@@ -129,52 +129,52 @@ module init_m
                      EXIT
                   end if
                end do
-               
-               if(.not.superposition) then 
-                  
+
+               if(.not.superposition) then
+
                   ! creating necrotic tissue in the secondary mesh
-                  
-                  
+
+
                   do l=1, np_necrotic_all
-                     
+
                      i_nec = i  + necrotic_all(l,1)
                      j_nec = j  + necrotic_all(l,2)
                      k_nec = k  + necrotic_all(l,3)
-                     
+
                      m = lxyz_inv(i_nec,j_nec,k_nec) ! new ip global point
-                     
+
                      necrotic_tissue(m)%phi = 1.d0
                      cell(m)%T = vegf_source_conc
-                     
+
                   end do
-                  
+
                   cell(ip)%T = vegf_source_conc
-                  
+
                   cell(ip)%source = 1
-                  
-                  n_source = n_source + 1	
-                  
+
+                  n_source = n_source + 1
+
                   vegf_xyz(n_source,1) = i
                   vegf_xyz(n_source,2) = j
                   vegf_xyz(n_source,3) = k
-                  
-                  
+
+
                end if
-               
+
             end if
-            
-            
+
+
          end do
       end do
-      
+
 
     end subroutine simul_box_init
-  
-    
+
+
     subroutine space_init(Lsize, lxyz, lxyz_inv, boundary_points, np, ndim, periodic)
-      
+
       implicit none
-      
+
       ! input/output variables
       integer, intent(in) ::  Lsize(1:3), boundary_points
       integer, allocatable, intent(inout) :: lxyz(:,:), lxyz_inv(:,:,:)
@@ -187,32 +187,32 @@ module init_m
       ip = 0
       ip_part = np
 
-      ! bulk points 
+      ! bulk points
       ! allocated from 1 to np
 
       do i=-Lsize(1), Lsize(1)-1
          do j=-Lsize(2), Lsize(2)-1
             do k=-Lsize(3), Lsize(3)-1
-               
+
                ip = ip + 1
-               
+
                lxyz(ip,1) = i
                lxyz(ip,2) = j
                lxyz(ip,3) = k
-               
-               lxyz_inv(i,j,k) = ip                 
-               
+
+               lxyz_inv(i,j,k) = ip
+
             end do
          end do
       end do
-     
+
       ! boundary points
       ! allocated from np to np_part
 
       do i=-Lsize(1)-boundary_points, Lsize(1)-1+boundary_points
          do j=-Lsize(2)-boundary_points, Lsize(2)-1+boundary_points
             do k=-Lsize(3)-boundary_points, Lsize(3)-1+boundary_points
-               
+
                l = i
                m = j
                n = k
@@ -222,15 +222,15 @@ module init_m
                hs(1) = heaviside(real(i))
                hs(2) = heaviside(real(j))
                hs(3) = heaviside(real(k))
-                  
- 
+
+
                 if( abs(i)>Lsize(1)-hs(1)) then
-                  boundary = .true.               
+                  boundary = .true.
                   l = i - SIGN(1,i)*(2*Lsize(1))!- SIGN(1,i)*heaviside(-real(i))
                end if
 
                if( abs(j)>Lsize(2)-hs(2)) then
-                  boundary = .true.               
+                  boundary = .true.
                   m = j  - SIGN(1,j)*(2*Lsize(2))!- SIGN(1,j)*heaviside(-real(j))
                end if
 
@@ -242,45 +242,45 @@ module init_m
                      n = k - SIGN(1,k)
                   end if
                end if
- 
- 
+
+
                if(boundary) then
                   ip_part = ip_part + 1
-                  
+
                   lxyz(ip_part,1) = l
                   lxyz(ip_part,2) = m
                   lxyz(ip_part,3) = n
-                  
+
                   lxyz_inv(i,j,k) = lxyz_inv(l, m, n)
                end if
-               
+
                if(periodic) then
                   ndim = 3
                else
                   ndim = 2
                end if
-               
+
                ! the updating of boundaries should be
                ! cell(ip_part) = cell( lxyz_inv( lxyz(np_part,1), lxyz(np_part,2), lxyz(np_part,3) ) )
-               ! because: 
+               ! because:
                ! lxyz(np_part,1), lxyz(np_part,2), lxyz(np_part,3) ->(l, m, n) in the bulk
                ! then lxyz_inv(m,n,l) will give the updated value in the bulk
                ! for the respective boundary position cell(ip_part)
-               
+
             end do
          end do
       end do
-      
+
     end subroutine space_init
-    
-    
+
+
     subroutine parameters_init(cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length,&
          vegf_rate, vegf_source_conc, prolif_rate, vessel_radius, tstep, dt, chi, Lsize, dr, dir_name, iseed,&
          boundary_points, source_max, vegf_grad_min, vegf_grad_max, depletion_weight, output_period, extra_steps, &
          n_max_tipc, thinning,periodic)
-      
-      implicit none 
-      
+
+      implicit none
+
       real, intent(inout) :: cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length, vegf_rate, &
            vegf_source_conc, prolif_rate, vessel_radius, dt, chi, vegf_grad_min, vegf_grad_max, depletion_weight
       integer, intent(inout) :: tstep, Lsize(3), iseed, boundary_points, source_max, dr(3), output_period, n_max_tipc, &
@@ -288,7 +288,7 @@ module init_m
       character(len=3), intent(inout) :: dir_name
       character(len=255) :: temp
       logical :: periodic, thinning
-      
+
       OPEN (UNIT=1,FILE='input_file')
       read(1,*) cell_radius, temp ! R_c - Cell Radius
       read(1,*) diffusion_const, temp ! D - Ang. Fac. Diffusion Constant
@@ -304,7 +304,7 @@ module init_m
       read(1,*) dt, temp ! dt - Time increment
       read(1,*) chi, temp ! chi - Chemotaxis
       read(1,*) Lsize(1:3), dr(1:3), temp !Box Length - x,y,z, dr
-      read(1,*) dir_name, temp ! Simulation name 
+      read(1,*) dir_name, temp ! Simulation name
       read(1,*) iseed, temp ! Initial Seed for RAN2
       read(1,*) boundary_points, temp ! boundary points
       read(1,*) source_max, temp ! max number of vegf sources
@@ -334,7 +334,7 @@ module init_m
       write(2,'(F10.5,A)') dt, " dt" ! dt - Time increment
       write(2,'(F10.2,A)') chi, " chi" ! chi - Chemotaxis
       write(2,'(I3, I3, I3, I3, I3, I3,A)') Lsize(1:3), dr(1:3), " box_length_xyz_dr" !Box Length - x,y,z, dr
-      write(2,'(A,A)') dir_name, " dir_name" ! Simulation name 
+      write(2,'(A,A)') dir_name, " dir_name" ! Simulation name
       write(2,'(I10,A)') iseed, " iseed" ! Initial Seed for RAN2
       write(2,'(I10,A)') boundary_points, " bounary_points"! boundary points
       write(2,'(I10,A)') source_max, " source_max" ! max number of vegf sources
@@ -346,11 +346,11 @@ module init_m
       write(2,'(I10,A)') n_max_tipc, " n_max_tipc" ! max number of tip cells
       write(2,'(L1,A)') thinning, " thinning" ! thinning on/off
       write(2,'(L1,A) ') periodic, " periodic" ! boundary conditions
-      CLOSE(2)      
+      CLOSE(2)
     end subroutine parameters_init
-    
 
-    
+
+
     subroutine print_header(Lsize, n_source, dir_name, periodic)
 
       implicit none
@@ -367,13 +367,13 @@ module init_m
       call date_and_time(date,time,zone,values)
       call date_and_time(DATE=date,ZONE=zone)
       call date_and_time(TIME=time)
- 
-      call hostnm(hostname) 
+
+      call hostnm(hostname)
       call getcwd(cwd)
-      call getlog(username) 
+      call getlog(username)
       write(*,'(A)') "                                Running Angio with Blood Flow"
       write(*,'(A)') "       "
-      write(*,'(A)') "Version        :       5.5.u.mod"
+      write(*,'(A)') "Version        :       5.6.s (August 1, 2016)"
       write(*,'(A,A)') "Locate         :       ", trim(cwd)
       write(*,'(A,A)') "User           :       ", trim(username)
       write(*,'(A)') "Developer      :       Moreira, M."
@@ -397,7 +397,7 @@ module init_m
       write(*,'(A,A)') "Simulation ID: ", dir_name
       write(*,'(A,I10)') "VEGF Sources:", n_source
     end subroutine print_header
-    
+
 
     subroutine init_from_file(cell, lxyz_inv, np, np_phi, dir_name, file_id)
 
@@ -411,9 +411,9 @@ module init_m
       ! private
       integer :: r(3), ip
       real :: phi_temp
-      
-      open(UNIT=100, FILE=dir_name//'/phi'//trim(file_id)//'.xyz')    
-      cell(:)%phi = -1.d0    
+
+      open(UNIT=100, FILE=dir_name//'/phi'//trim(file_id)//'.xyz')
+      cell(:)%phi = -1.d0
       do ip=1, np_phi
          read(100,*) r(1:3), phi_temp
          cell(lxyz_inv(r(1),r(2),r(3) ) )%phi = phi_temp
@@ -423,12 +423,12 @@ module init_m
       !do ip=1, np
       !   read(200,*) r(1:3), cell(ip)%T
       !end do
-      !close(200)     
-      
+      !close(200)
+
     end subroutine init_from_file
 
   end module init_m
- 
+
 
 !! Local Variables:
 !! mode: f90

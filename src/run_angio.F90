@@ -151,10 +151,11 @@ module run_angio_m
          nstep = nstep + 1
 
          ! the program will run extra_steps steps after the last source deactivation
-         if(n_source.eq.0) then
-            tstep = nstep + extra_steps
-            n_source = -1
-         end if
+         ! deprecated - to remove in the next version
+         !if(n_source.eq.0) then
+        !    tstep = nstep + extra_steps
+        !    n_source = -1
+        ! end if
 
          if(n_tipcell>0) then
             calc_flow_period = 50
@@ -260,7 +261,20 @@ module run_angio_m
 
 	   end if
  	 else
-               call source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic)
+
+    if(counter+1.eq.output_period) then
+      do ip=1, np
+        if(cell(ip)%phi>=0) then
+          phis(ip) = 1.d0
+        else
+          phis(ip) = -1.d0
+        end if
+      end do
+      call thinning_run(phis, lxyz, lxyz_inv, lsize, np)
+     end if
+
+
+     call source_deactivate(cell, vegf_xyz, n_source, vegf_s, lxyz, lxyz_inv, np_vegf_s, Lsize, periodic)
  	 endif
 
          call CPU_TIME(time_end)
