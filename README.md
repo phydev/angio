@@ -3,7 +3,7 @@ This project is hosted by the [CFisUC](http://cfisuc.fis.uc.pt/) at the [Univers
 and consists in a phase-field model for tumor angiogenesis. The model is based on the paper published by
 [Travasso et al. (2011)](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0019989) with some physical and computational improvements.
 
-### Version 5.5.u.mod contain:
+### Version 5.6.s contains:
 - Coupled the blood flow and the hypoxic cell deactivation [New Feature!];
 - The hypoxic cells now have volume;
 - The system is modeled in three dimensions;
