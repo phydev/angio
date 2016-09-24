@@ -239,7 +239,7 @@ module init_m
                   if(periodic) then
                      n = k - SIGN(1,k)*(2*Lsize(3))!- SIGN(1,k)*heaviside(-real(k))
                   else
-                     n = k - SIGN(1,k)
+                     n = SIGN(1,k)*Lsize(3) - hs(3)*SIGN(1,k)
                   end if
                end if
 
@@ -373,7 +373,7 @@ module init_m
       call getlog(username)
       write(*,'(A)') "                                Running Angio with Blood Flow"
       write(*,'(A)') "       "
-      write(*,'(A)') "Version        :       5.6.s (August 1, 2016)"
+      write(*,'(A)') "Version        :       5.7.s (September 24, 2016)"
       write(*,'(A,A)') "Locate         :       ", trim(cwd)
       write(*,'(A,A)') "User           :       ", trim(username)
       write(*,'(A)') "Developer      :       Moreira, M."

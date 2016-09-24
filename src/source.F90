@@ -99,12 +99,12 @@ module source_m
 
       integer, intent(in) :: np, nps, Lsize(3)
       real, intent(in) :: phi(1:np)
-      real, allocatable, intent(inout) :: flow_full(:)
-      real, allocatable, intent(in) :: flow(:)
+      real, intent(inout) :: flow_full(1:np)
+      real, intent(in) :: flow(1:np)
       integer, allocatable, intent(in) :: sphere(:,:), d2sphere(:), lxyz(:,:), lxyz_inv(:,:,:)
 
       ! intern variables
-	  real :: hs(1:3)
+	   real :: hs(1:3)
       integer :: ip, ips, d2temp,ip2, r(1:3)
 
       flow_full(:) = flow(:)
@@ -122,6 +122,7 @@ module source_m
 
                if(flow(ip2) .gt. 0.d0 .and. d2sphere(ips) .lt. d2temp) then
                   d2temp = d2sphere(ips)
+
                   flow_full(ip) =  flow(ip2)
                end if
 
