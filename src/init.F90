@@ -354,12 +354,12 @@ module init_m
 
 
 
-    subroutine print_header(Lsize, n_source, dir_name, periodic)
+    subroutine print_header(Lsize, n_source, dir_name, calculate_flow, periodic)
 
       implicit none
       integer, intent(in) :: Lsize(1:3), n_source
       character(3),intent(in)  :: dir_name
-      logical, intent(in) :: periodic
+      logical, intent(in) :: calculate_flow, periodic
       character(len=255) :: cwd, hostname
       character(len=32) :: username
       character(8)  :: date
@@ -375,9 +375,13 @@ module init_m
       call hostnm(hostname)
       call getcwd(cwd)
       call getlog(username)
-      write(*,'(A)') "                                Running Angio with Blood Flow"
+      if(calculate_flow) then
+        write(*,'(A)') "                                Running Angio with Blood Flow"
+      else
+        write(*,'(A)') "                                Running Angio               "
+      end if
       write(*,'(A)') "       "
-      write(*,'(A)') "Version        :       5.7.s (September 24, 2016)"
+      write(*,'(A)') "Version        :       5.8.s (November 2, 2016)"
       write(*,'(A,A)') "Locate         :       ", trim(cwd)
       write(*,'(A,A)') "User           :       ", trim(username)
       write(*,'(A)') "Developer      :       Moreira, M."

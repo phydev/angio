@@ -113,7 +113,7 @@ contains
 
 
     ! printing header
-    call print_header(Lsize, n_source, dir_name, periodic)
+    call print_header(Lsize, n_source, dir_name, calculate_flow, periodic)
 
     ! Cahn-Hilliard steps only for the necrotic tissue
     call cahn_hilliard(necrotic_tissue, 100, dt, dr, np, interface_width, lxyz, lxyz_inv, dir_name)
