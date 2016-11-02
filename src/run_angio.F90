@@ -47,7 +47,7 @@ contains
     call  parameters_init(cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length,&
     vegf_rate, vegf_source_conc, prolif_rate, vessel_radius, tstep, dt, chi, Lsize, dr, dir_name, iseed,&
     boundary_points, source_max, vegf_grad_min, vegf_grad_max, depletion_weight, output_period, extra_steps, &
-    n_max_tipc, thinning, periodic)
+    n_max_tipc, thinning, calculate_flow, periodic)
 
 
     ! notch distance
@@ -60,7 +60,6 @@ contains
     ! phi max inside etc
     phi_max = (prolif_rate*vegf_p*cell_radius)/(2.d0*chi*vegf_grad_max)
     ! flow
-    calculate_flow = .true.
     calc_flow_period = 50
     flow_count = 0
 

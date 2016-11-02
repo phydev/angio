@@ -92,9 +92,9 @@ module init_m
       n_source = 0
       attempt = 0
       ! random distribution
-      do while (attempt<1000)
 
-         attempt = attempt + 1
+
+
 
          do ip_source=1, source_max
 
@@ -165,7 +165,7 @@ module init_m
 
 
          end do
-      end do
+
 
 
     end subroutine simul_box_init
@@ -176,11 +176,11 @@ module init_m
       implicit none
 
       ! input/output variables
-      integer, intent(in) ::  Lsize(1:3), boundary_points
+      integer, intent(in) ::  Lsize(1:3), boundary_points, np
       integer, allocatable, intent(inout) :: lxyz(:,:), lxyz_inv(:,:,:)
       integer, intent(out) :: ndim
       ! internal variables
-      integer :: i, j, k, l, m, n, ip, ip_part, np
+      integer :: i, j, k, l, m, n, ip, ip_part
       real :: hs(1:3)
       logical :: boundary, periodic
 
@@ -277,7 +277,7 @@ module init_m
     subroutine parameters_init(cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length,&
          vegf_rate, vegf_source_conc, prolif_rate, vessel_radius, tstep, dt, chi, Lsize, dr, dir_name, iseed,&
          boundary_points, source_max, vegf_grad_min, vegf_grad_max, depletion_weight, output_period, extra_steps, &
-         n_max_tipc, thinning,periodic)
+         n_max_tipc, thinning, calculate_flow, periodic)
 
       implicit none
 
@@ -285,9 +285,10 @@ module init_m
            vegf_source_conc, prolif_rate, vessel_radius, dt, chi, vegf_grad_min, vegf_grad_max, depletion_weight
       integer, intent(inout) :: tstep, Lsize(3), iseed, boundary_points, source_max, dr(3), output_period, n_max_tipc, &
            extra_steps
+      logical, intent(inout) :: periodic, thinning, calculate_flow
       character(len=3), intent(inout) :: dir_name
       character(len=255) :: temp
-      logical :: periodic, thinning
+
 
       OPEN (UNIT=1,FILE='input_file')
       read(1,*) cell_radius, temp ! R_c - Cell Radius
@@ -316,6 +317,7 @@ module init_m
       read(1,*) n_max_tipc, temp ! max number of tip cells
       read(1,*) thinning, temp ! thinning on/off
       read(1,*) periodic, temp ! boundary conditions
+      read(1,*) calculate_flow, temp  ! flow
       CLOSE(1)
       call system('mkdir '//dir_name)
 
@@ -346,6 +348,7 @@ module init_m
       write(2,'(I10,A)') n_max_tipc, " n_max_tipc" ! max number of tip cells
       write(2,'(L1,A)') thinning, " thinning" ! thinning on/off
       write(2,'(L1,A) ') periodic, " periodic" ! boundary conditions
+      write(2,'(L1,A) ') calculate_flow, " flow_FT" ! boundary conditions
       CLOSE(2)
     end subroutine parameters_init
 
@@ -355,14 +358,15 @@ module init_m
 
       implicit none
       integer, intent(in) :: Lsize(1:3), n_source
+      character(3),intent(in)  :: dir_name
+      logical, intent(in) :: periodic
       character(len=255) :: cwd, hostname
       character(len=32) :: username
       character(8)  :: date
       character(10) :: time
       character(5)  :: zone
-      character(3)  :: dir_name
       integer, dimension(8) :: values
-      logical :: periodic
+
 
       call date_and_time(date,time,zone,values)
       call date_and_time(DATE=date,ZONE=zone)
