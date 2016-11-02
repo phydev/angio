@@ -24,3 +24,4 @@
 4000, max_number_of_tip_cells
 T, thinning_FT
 F, periodic_FT
+T, flow_FT
