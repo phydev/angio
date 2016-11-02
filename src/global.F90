@@ -49,7 +49,9 @@ module global_m
            vegf_source_conc, prolif_rate, vessel_radius, dt, chi, vegf_grad_min, vegf_grad_max
       integer, public :: tstep, iseed, dr(3)
       character(len=3), public :: dir_name
-      character(len=10), public :: file_name, file_id
+      character(len=6), public :: file_name, file_id
+      character(len=17), public :: file_phi, file_t
+      character(len=18),public :: file_phis
       real, public :: notch_distance, depletion_weight
       ! mesh variables
       integer, public, allocatable :: lxyz(:,:), lxyz_inv(:,:,:),  grid_cell_domain(:), d2sphere(:), sphere(:,:), vegf_all(:,:)
