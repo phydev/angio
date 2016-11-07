@@ -12,14 +12,15 @@ module get_data_m
 
 contains
 
-  subroutine run_get_data(phis,Lsize,lxyz,lxyz_inv,np,periodic,output,genus)
+  subroutine run_get_data(phis,Lsize,lxyz,lxyz_inv,np,periodic,output,genus, branch_length, dead_volume)
 
     implicit none
     ! external
     real, allocatable,  intent(in) :: phis(:)
     integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:,:)
     integer, intent(in) :: Lsize(3), np
-    integer, intent(out) :: output, genus
+    integer, intent(out) :: output, genus, branch_length
+    real, intent(out) :: dead_volume
     logical, intent(in) :: periodic
     ! GET_NBRANCHES VARIABLES
     integer :: nbranches, carry_on
@@ -372,13 +373,20 @@ contains
 
     nbranches = 0
     real_branches = 0
+    branch_length = 0
+    dead_volume = 0.d0
     !print*, "distancias"
     do n=1, np_nodes-1
        do m=n+1, np_nodes
           if(nodes_matrix(m,n)>8 ) then
             !print*, n, m, nodes_matrix(m,n)
+             branch_length = branch_length + nodes_matrix(m,n)
+
              real_branches = real_branches + 1
+          elseif(nodes_matrix(m,n)<8.and.nodes_matrix(m,n)>4) then
+             dead_volume = dead_volume + (4./3.)*3.14*4.0**3
           end if
+
           if(nodes_matrix(m,n)>1 ) then
              nbranches = nbranches + 1
           end if
@@ -389,14 +397,14 @@ contains
 
     output = real_branches!nbranches
     genus = nbranches - (real_nodes+vertex_count) + 1!real_branches-np_nodes+1
-    print*, (real_nodes+vertex_count), real_branches, genus
+  !  print*, real_branches, genus
     !print*,"genus      nbranches        rb            n        real_nodes"
     !print*, genus, nbranches, real_branches, np_nodes, real_nodes
 	!write(*,*) nbranches
   !print*, "      real_nodes     np_nodes     genus         nbranches       real_branches"
   !print*, real_nodes, np_nodes, genus, nbranches, real_branches
 
-   DEALLOCATE(nnodes)
+    DEALLOCATE(nnodes)
     DEALLOCATE(path_nodes)
     DEALLOCATE(temp_node_index)
     DEALLOCATE(neighbours)

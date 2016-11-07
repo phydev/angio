@@ -5,10 +5,10 @@ program main
   implicit none
   integer :: Lsize(3), np, boundary_points, ndim, np_part
   integer :: lines_phi, lines_phis, initial_file, last_file, delta, ifile, ip
-  integer :: i,j,k, output, genus
+  integer :: i,j,k, output, genus, branch_length
   real, allocatable ::  phi(:), phis(:)
   integer, allocatable :: lxyz(:,:), lxyz_inv(:,:,:)
-  real :: f, volume, length, diameter, M_PI
+  real :: f, volume, length, diameter, M_PI, dead_volume, diameter_new
   logical :: periodic
 
   character (8) :: temp
@@ -89,50 +89,29 @@ program main
      end if
 
      phis(:) = 0.d0
-      ! do k = -50,49
-      !   phis(lxyz_inv(0,0,k)) = 1.0
-      ! end do
-      !
-      ! do i = 1, 10
-      !   phis(lxyz_inv(i,0,10)) = 1.0
-      !   phis(lxyz_inv(i,0,-10)) = 1.0
-      !   phis(lxyz_inv(-i,0,-20)) = 1.0
-      !   phis(lxyz_inv(i,i,30)) = 1.0
-      !   phis(lxyz_inv(i,i,-20)) = 1.0
-      !   phis(lxyz_inv(i,i,i)) = 1.0
-      !   do j=5,10
-      !     phis(lxyz_inv(i,j,30)) = 1.0
-      !   end do
-      ! end do
-      !
-      ! do i=-10,10
-      !   phis(lxyz_inv(10,0,i)) = 1.0
-      ! end do
-      ! phis(lxyz_inv(10,0,10)) = 0.0
-      ! phis(lxyz_inv(10,0,-10)) = 0.0
-      ! phis(lxyz_inv(0,0,10)) = 0.0
-      ! phis(lxyz_inv(0,0,-10)) = 0.0
-      ! phis(lxyz_inv(0,0,-20)) = 0.0
-      ! phis(lxyz_inv(0,0,1)) = 0.0
-       open(UNIT=600, file='phis150000.xyz')
+
+      ! open(UNIT=600, file='phis150000.xy')
      do ip=1, lines_phis
 
-        read(ifile,*) i, f
-        phis(i) = 1.0
+        !read(ifile,*) i
+        !phis(i) = 1.0
       !if(phis(ip)>0)   write(600,*) lxyz(ip,1:3), phis(ip)
-      write(600,*) lxyz(i,1:3),f
-        !read(ifile,*) i, j, k, f
-        !phis(lxyz_inv(i,j,k)) = 1.0
+    !  write(600,*) lxyz(i,1:3),f
+        read(ifile,*) i, j, k, f
+        phis(lxyz_inv(i,j,k)) = 1.0
      end do
-     close(600)
+     !close(600)
      close(ifile)
 
 
-     call run_get_data(phis,Lsize,lxyz,lxyz_inv,np,periodic,output,genus)
 
-     diameter = 2.00*sqrt(lines_phi/(M_PI*lines_phis))
+     call run_get_data(phis,Lsize,lxyz,lxyz_inv,np,periodic,output,genus,branch_length,dead_volume)
+       dead_volume = 0.0
+     !diameter = 2.00*sqrt(lines_phi/(M_PI*lines_phis))
+     diameter_new = 2.00*sqrt((real(lines_phi)-dead_volume)/(M_PI*real(branch_length)))
+    ! print*, branch_length, diameter, dead_volume
 
-     write(15,*)  ifile, output, diameter, genus
+      write(15,*)  ifile, output, diameter_new, genus
 
   end do
   close(15)
@@ -149,7 +128,8 @@ program main
   write(16,*) "plot 'data"//dir_name//".dat' using 1:2 title 'branches' w linespoint ls 7"
   write(16,*) "set ylabel 'diameter'"
   write(16,*) "set output 'diameter"//dir_name//".pdf'"
-  write(16,*) "plot 'data"//dir_name//".dat' using 1:3 title 'diameter' w linespoint ls 2"
+  write(16,*) "plot 'data"//dir_name//".dat' using 1:3 title 'diameter' pt 7"
+  !write(16,*) "plot 'data"//dir_name//".dat' using 1:3 title 'diameter' w linespoint ls 2,"
   write(16,*) "set ylabel 'Genus'"
   write(16,*) "set key bottom"
   write(16,*) "set output 'genus"//dir_name//".pdf'"
