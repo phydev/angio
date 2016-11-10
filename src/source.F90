@@ -52,10 +52,9 @@ module source_m
 
       !sair = .false.
 
-      deactivated = .false.
 
       do i=1, n_source_o
-
+         deactivated = .false.
          ip_source = lxyz_inv(vegf_xyz(i,1),vegf_xyz(i,2),vegf_xyz(i,3))
 
          do j=1, np_vegf_s
@@ -83,8 +82,10 @@ module source_m
 
          end do
 
-         if(.not.deactivated) cell(ip_source)%source = 1
-
+         if(.not.deactivated) then
+            cell(ip_source)%source = 1
+            cell(ip_source)%T = 1.d0
+         end if
          !if(sair) EXIT
 
       end do

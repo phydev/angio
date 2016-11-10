@@ -108,7 +108,7 @@ module init_m
             ij_radius = sqrt( real((i)**2 + (j)**2))
 
             if ( ij_radius > vessel_radius+diff_oxy_length &
-                 .and. abs(k)<Lsize(3)-cell_radius .and. &
+                 .and. abs(k)<Lsize(3)-2.d0*cell_radius .and. &
                  ij_radius < frontier_radius ) then
 
                ! verifying superposition
