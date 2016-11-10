@@ -38,13 +38,14 @@ module run_angio_m
 
 contains
 
-  subroutine run_angio()
+  subroutine run_angio(sim_id)
 
     implicit none
 
+    character(len=3), intent(in) :: sim_id
 
     ! initializing parameters
-    call  parameters_init(cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length,&
+    call  parameters_init(sim_id, cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length,&
     vegf_rate, vegf_source_conc, prolif_rate, vessel_radius, tstep, dt, chi, Lsize, dr, dir_name, iseed,&
     boundary_points, source_max, vegf_grad_min, vegf_grad_max, depletion_weight, output_period, extra_steps, &
     n_max_tipc, thinning, calculate_flow, periodic)

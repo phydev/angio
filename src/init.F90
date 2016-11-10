@@ -274,13 +274,14 @@ module init_m
     end subroutine space_init
 
 
-    subroutine parameters_init(cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length,&
+    subroutine parameters_init(sim_id, cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length,&
          vegf_rate, vegf_source_conc, prolif_rate, vessel_radius, tstep, dt, chi, Lsize, dr, dir_name, iseed,&
          boundary_points, source_max, vegf_grad_min, vegf_grad_max, depletion_weight, output_period, extra_steps, &
          n_max_tipc, thinning, calculate_flow, periodic)
 
       implicit none
 
+      character(len=3), intent(in) :: sim_id
       real, intent(inout) :: cell_radius, diffusion_const, interface_width, vegf_p, vegf_c, diff_oxy_length, vegf_rate, &
            vegf_source_conc, prolif_rate, vessel_radius, dt, chi, vegf_grad_min, vegf_grad_max, depletion_weight
       integer, intent(inout) :: tstep, Lsize(3), iseed, boundary_points, source_max, dr(3), output_period, n_max_tipc, &
@@ -290,7 +291,8 @@ module init_m
       character(len=255) :: temp
 
 
-      OPEN (UNIT=1,FILE='input_file')
+      OPEN (UNIT=1,FILE='inp'//sim_id)
+      dir_name = sim_id
       read(1,*) cell_radius, temp ! R_c - Cell Radius
       read(1,*) diffusion_const, temp ! D - Ang. Fac. Diffusion Constant
       read(1,*) interface_width, temp ! Eps - Interface Witdh
@@ -305,7 +307,6 @@ module init_m
       read(1,*) dt, temp ! dt - Time increment
       read(1,*) chi, temp ! chi - Chemotaxis
       read(1,*) Lsize(1:3), dr(1:3), temp !Box Length - x,y,z, dr
-      read(1,*) dir_name, temp ! Simulation name
       read(1,*) iseed, temp ! Initial Seed for RAN2
       read(1,*) boundary_points, temp ! boundary points
       read(1,*) source_max, temp ! max number of vegf sources
