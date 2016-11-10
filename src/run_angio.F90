@@ -302,10 +302,10 @@ contains
 
         write(file_name,'(I6)') nstep
         file_phi = trim(dir_name//'/phi'//trim(file_name)//'.xyz')
-        !file_t = trim(dir_name//'/t'//trim(file_name)//'.xyz')
+        file_t = trim(dir_name//'/t'//trim(file_name)//'.xyz')
         file_phis = trim(dir_name//'/phis'//trim(file_name)//'.xyz')
         OPEN (UNIT=500,FILE=file_phi, STATUS='NEW')
-        !OPEN (UNIT=nstep+1,FILE=file_t)
+        OPEN (UNIT=700,FILE=file_t)
         if(thinning) OPEN (UNIT=600,FILE=file_phis, STATUS='NEW')
         do ip=1, np
 
@@ -314,14 +314,14 @@ contains
           end if
 
           if(cell(ip)%phi>0) then
-            write(500,'(I10,F10.2,F10.4)') ip, cell(ip)%phi, flow_full(ip)
+            write(500,'(I10,I10,I10,F10.2,F10.4)') lxyz(ip,1:3), cell(ip)%phi, flow_full(ip)
           end if
-      !    if(lxyz(ip,3).eq.0) then
-        !    write(nstep+1,'(I10,I10,F10.3)') lxyz(ip,1:2), cell(ip)%T
-      !    end if
+          if(lxyz(ip,3).eq.0) then
+            write(700,'(I10,I10,F10.3)') lxyz(ip,1:2), cell(ip)%T
+          end if
         end do
         close(500)
-      !  close(nstep+1)
+        close(700)
         if(thinning) close(600)
       end if
       ! end of the output
