@@ -381,7 +381,7 @@ module init_m
         write(*,'(A)') "                                Running Angio               "
       end if
       write(*,'(A)') "       "
-      write(*,'(A)') "Version        :       5.8.s (November 2, 2016)"
+      write(*,'(A)') "Version        :       6.0.s (November 10, 2016)"
       write(*,'(A,A)') "Locate         :       ", trim(cwd)
       write(*,'(A,A)') "User           :       ", trim(username)
       write(*,'(A)') "Developer      :       Moreira, M."
