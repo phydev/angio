@@ -76,9 +76,9 @@ module etc_dynamics_m
                         dy = lxyz(ip,2) - tipc(l)%y
                         dz = lxyz(ip,3) - tipc(l)%z
                         ! minimum image method
-                        dx = min(dx, 2*Lsize(1)-1-abs(dx))
-                        dy = min(dy, 2*Lsize(2)-1-abs(dy))
-                        if(ndim.eq.3) dz = min(dz, 2*Lsize(3)-1-abs(dz))
+                        dx = min(abs(dx), 2*Lsize(1)-1-abs(dx))
+                        dy = min(abs(dy), 2*Lsize(2)-1-abs(dy))
+                        if(ndim.eq.3) dz = min(abs(dz), 2*Lsize(3)-1-abs(dz))
 
                         dxyz = dx*dx + dy*dy + dz*dz
 
@@ -106,7 +106,7 @@ module etc_dynamics_m
                         hs = heaviside(temp)
 
                         if(.not.periodic) then
-                           if(abs(k)>Lsize(3)-hs -int(2.0*cell_radius)) then
+                           if(abs(k)>Lsize(3)-hs-int(2.0*cell_radius)) then
                               signal = .false.
                               EXIT
                            end if
@@ -287,7 +287,7 @@ module etc_dynamics_m
                tipc(ip2)%z = tipc(ip2)%z + 2.d0*Lsize(3) - 1.d0
             end if
          else
-            if(tipc(ip2)%z>=Lsize(3)-1-1.5*cell_radius .or. tipc(ip2)%z<=-Lsize(3)+1.5*cell_radius) then
+            if(tipc(ip2)%z>=Lsize(3)-1-2.0*cell_radius .or. tipc(ip2)%z<=-Lsize(3)+2.0*cell_radius) then
                tipc(ip2)%z = tipc(ip2)%z - dx_vec(3)
              end if
          end if
