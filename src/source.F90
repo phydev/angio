@@ -149,6 +149,7 @@ module source_m
       integer :: n_source_o, sinal, r(3), i, j, ip, ip_source, temp(3)
       logical :: deactivated !sair
       real :: cutoff_check
+      real(4) :: flow_p4
 
       ! deactivating vegf sources
 
@@ -170,15 +171,15 @@ module source_m
 
             ip = lxyz_inv(r(1),r(2),r(3))
 
-
-            if(10.0*flow(ip)>0.d8) then
+            flow_p4 = flow(ip)
+            if(flow_p4>1.0E-06) then
 
                deactivated = .true.
                cell(ip_source)%source = -1
 
-               !write(*,*) "hypoxic cell deactivated (x,y,z), n_source:", lxyz(ip_source,1:3), n_source -1
-               !write(*,*) "xyz,flow:", lxyz(ip,1:3), flow(ip)
-               !write(*,*) sqrt(real( (lxyz(ip,1)-lxyz(ip_source,1))**2+ (lxyz(ip,2)-lxyz(ip_source,2))**2 + (lxyz(ip,3)-lxyz(ip_source,3))**2))
+               write(*,'(A,I10,I10,I10,I10)') "HC (x,y,z,id):", lxyz(ip_source,1:3), i
+               write(*,*) "xyz,flow:", lxyz(ip,1:3), flow(ip)
+               !write(*,'(F10.4)') sqrt(real( (lxyz(ip,1)-lxyz(ip_source,1))**2+ (lxyz(ip,2)-lxyz(ip_source,2))**2 + (lxyz(ip,3)-lxyz(ip_source,3))**2))
                !temp(1:3) = vegf_xyz(i,1:3)
                !vegf_xyz(i,1:3) = vegf_xyz(n_source,1:3)
                !vegf_xyz(n_source,1:3) = temp(1:3)

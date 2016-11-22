@@ -209,7 +209,7 @@ contains
           found = 0 
           path_length = 0 
           MN_nodes(1) = ip
-          MN_nodes(2) = MN_nodes(1)	
+          MN_nodes(2) = MN_nodes(1)
           
           ! nodes that are first neighbours
           if(path_nodes(n).eq.1) then
@@ -257,7 +257,7 @@ contains
                          do m=1, np_nodes
 
 
-                            if (nodes(m).eq.ip2) then	
+                            if (nodes(m).eq.ip2) then
                                path_length = path_length+1
                                nodes_connecteds = nodes_connecteds + 1
 
@@ -357,7 +357,7 @@ contains
 
 
     B(1:np_nodes) = 0.d0
-    B(node_inout(1)) = 1.d0
+    B(node_inout(1)) = 1000.d0
     IPIV(1:np_nodes) = 0
 
     call DGESV(np_nodes, 1, permittivity, np_nodes, IPIV, B, np_nodes, ierr)
