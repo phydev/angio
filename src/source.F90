@@ -177,8 +177,8 @@ module source_m
                deactivated = .true.
                cell(ip_source)%source = -1
 
-               write(*,'(A,I10,I10,I10,I10)') "HC (x,y,z,id):", lxyz(ip_source,1:3), i
-               write(*,*) "xyz,flow:", lxyz(ip,1:3), flow(ip)
+               !write(*,'(A,I10,I10,I10,I10)') "HC (x,y,z,id):", lxyz(ip_source,1:3), i
+               !write(*,*) "xyz,flow:", lxyz(ip,1:3), flow(ip)
                !write(*,'(F10.4)') sqrt(real( (lxyz(ip,1)-lxyz(ip_source,1))**2+ (lxyz(ip,2)-lxyz(ip_source,2))**2 + (lxyz(ip,3)-lxyz(ip_source,3))**2))
                !temp(1:3) = vegf_xyz(i,1:3)
                !vegf_xyz(i,1:3) = vegf_xyz(n_source,1:3)
