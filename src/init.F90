@@ -77,13 +77,13 @@ module init_m
          ! initiating the VEGF distribution on the ECM outside the sources
          ! T(R) = Ts*exp(Ri(R-d-Rc)/10.0)
 
-         if( ij_radius>vessel_radius .and.  ij_radius <= vessel_radius+diff_oxy_length) then
-            cell(ip)% T = vegf_source_conc*exp(0.1 *  (real(ij_radius)-25.0)  )
-         end if
+         !if( ij_radius>vessel_radius .and.  ij_radius <= vessel_radius+diff_oxy_length) then
+         !   cell(ip)% T = vegf_source_conc*exp(0.1 *  (real(ij_radius)-25.0)  )
+         !end if
 
-         if(ij_radius> vessel_radius+diff_oxy_length) then
-            cell(ip)% T = vegf_source_conc
-         end if
+         !if(ij_radius> vessel_radius+diff_oxy_length) then
+         !   cell(ip)% T = 0.d0 
+         !end if
 
       end do
 
