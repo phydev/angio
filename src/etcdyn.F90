@@ -32,22 +32,24 @@ module etc_dynamics_m
 
 
      subroutine etc_search(cell, tipc, gg, Lsize, lxyz, lxyz_inv, notch_distance, n_tipcell, tip_s, &
-         vegf_c, nstep, vegf_grad_min, np, cell_radius, n_max_tipc, np_tip_s, periodic)
+         vegf_c, nstep, vegf_grad_min, np, cell_radius, n_max_tipc, np_tip_s, grid_cell_domain, vegf_xyz, &
+         ndim, periodic)
 
       implicit none
       ! external variables
-      type(mesh_t),allocatable,  intent(in) :: cell(:)
-      type(tip_cell_t),allocatable,  intent(inout) :: tipc(:)
-      real,allocatable, intent(in) :: gg(:,:)
+      type(mesh_t), allocatable, intent(in) :: cell(:)
+      type(tip_cell_t), allocatable, intent(inout) :: tipc(:)
+      real, allocatable, intent(in) :: gg(:,:)
       integer, intent(in) :: np, n_max_tipc
-      integer,allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:,:)
+      integer, allocatable, intent(in) :: lxyz(:,:), lxyz_inv(:,:,:), grid_cell_domain(:), vegf_xyz(:,:)
       real, intent(in) :: vegf_c, notch_distance, vegf_grad_min, cell_radius
-      integer, intent(in) :: nstep, Lsize(1:3), np_tip_s
-      integer,allocatable, intent(in) ::  tip_s(:,:)
+      integer, intent(in) :: nstep, Lsize(1:3), np_tip_s, ndim
+      integer, allocatable, intent(in) ::  tip_s(:,:)
       integer, intent(inout) ::  n_tipcell
       logical, intent(in) :: periodic
       ! internal
-      integer :: i, j, k, l, dx, dy, dz, dxyz, ip, ip2
+      real :: relative_pos(1:3), unitary(1:3), relative_image(1:3), abs_distance
+      integer :: i, j, k, l, dx, dy, dz, dxyz, ip, ip2, jdim
       real :: grad_T, hs, temp, temp_phi,  M_Pi
       logical :: signal, activated
 
@@ -58,7 +60,6 @@ module etc_dynamics_m
 
 
       do ip=1, np
-
 
          if(cell(ip)%phi>0.9) then ! phi=1
 
@@ -123,11 +124,28 @@ module etc_dynamics_m
                      end do
 
                      if (signal) then
+                       ! avoiding ETCs and Hypoxic Cells superposition
+                       abs_distance = 1000
+                       if(grid_cell_domain(ip)> 0) then
+
+                          relative_pos(1:3) =  vegf_xyz(grid_cell_domain(ip),1:3)  - lxyz(ip,1:3)
+                          relative_image(1:ndim) = 2.d0*Lsize(1:ndim) -unitary(1:ndim)- abs(relative_pos(1:ndim))
+
+                          do jdim=1, ndim
+                             if (abs(relative_pos(jdim)).gt.abs(relative_image(jdim))) then
+                                relative_pos(jdim) = relative_image(jdim)
+                             end if
+                          end do
+
+                          abs_distance = sqrt(relative_pos(1)**2+ relative_pos(2)**2  + relative_pos(3)**2)
+                        end if
+
+
 
                         ! comparing phi between actual candidate and
                         ! the last selected
 
-                        if ( cell(ip)%phi>temp_phi ) then
+                        if ( cell(ip)%phi>temp_phi .and. abs_distance.gt.2*cell_radius) then
 
                            tipc(n_tipcell+1)%x = lxyz(ip,1)
                            tipc(n_tipcell+1)%y = lxyz(ip,2)
@@ -268,6 +286,7 @@ module etc_dynamics_m
 
          ! boundary condiditions
 
+
          if(tipc(ip2)%x>Lsize(1) - 1 ) then
             tipc(ip2)%x = tipc(ip2)%x - 2.d0*Lsize(1) + 1.d0
          else if(tipc(ip2)%x< -Lsize(1)) then
@@ -297,8 +316,8 @@ module etc_dynamics_m
               int( anint(tipc(ip2)%y)),&
               int( anint(tipc(ip2)%z))) ! new ip global
 
-         ! Calculating Phi_c inside tipcell
 
+         ! Calculating Phi_c inside tipcell
          tipc(ip2)%phi =  (cell(int(tipc(ip2)%ip))%alpha_p*cell_radius)/&
               (2.d8*chi*grad_T*abs(temp)) ! phi_c
 
