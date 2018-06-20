@@ -9,5 +9,8 @@ and consists in a phase-field model for tumor angiogenesis. The model is based o
 - The system is modeled in three dimensions;
 - tools: Routines to measure the number of branches, anastomoses and the vessels diameter;
 
+### Publications:
+M. Moreira-Soares, R. Coimbra, L. Rebelo, J. Carvalho & R. D. M. Travasso. [Angiogenic Factors produced by Hypoxic Cells are a leading driver of Anastomoses in Sprouting Angiogenesis–a computational study](https://www.nature.com/articles/s41598-018-27034-8). Scientific Reports 8, 8726 (2018)
 
-![alt tag](https://i0.wp.com/moreirasm.files.wordpress.com/2015/05/vessels.gif?w=450)
+
+![alt tag](https://moreirasm.files.wordpress.com/2018/06/300ms.gif?w=364&h=335)
