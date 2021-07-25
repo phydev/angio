@@ -168,7 +168,8 @@ contains
 
       ! ETC search
       call etc_search(cell, tipc, gg, Lsize, lxyz, lxyz_inv, notch_distance, n_tipcell, tip_s, &
-      vegf_c, nstep, vegf_grad_min, np, cell_radius, n_max_tipc, np_tip_s, periodic)
+         vegf_c, nstep, vegf_grad_min, np, cell_radius, n_max_tipc, np_tip_s, grid_cell_domain, vegf_xyz, &
+         ndim, periodic)
 
       ! calculating laplacian of phi
       call dderivatives_lapl(cell(1:np)%phi, cell(1:np)%lapl_phi, np, dr, lxyz, lxyz_inv)
