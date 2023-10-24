@@ -8,17 +8,17 @@
 1.00, vegf_source_conc
 1.00, prolif_rate
 5.00, vessel_radius
-1000, total_time_step
+50, total_time_step
 0.0010, dt
 800.00, chi_chemiotactic_resp
-100, 100, 50, 1, 1, 1, Lx_Ly_Lz_dx_dy_dz
+30, 30, 30, 1, 1, 1, Lx_Ly_Lz_dx_dy_dz
 -754333222, random_seed
 20, number_of_boundary_points
-10000, source_max
+100, source_max
 0.01, vegf_grad_min
 0.03, vegf_max
 2.00, depletion_weight
-100, output_period
+10, output_period
 0, extra_steps
 4000, max_number_of_tip_cells
 T, thinning_FT
