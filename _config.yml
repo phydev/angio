@@ -5,4 +5,4 @@ show_downloads: true
 remote_theme: "mmistakes/minimal-mistakes@4.24.0"
 
 gems:
-  - Gemfile
+  - plugins
