@@ -17,4 +17,4 @@ jobs:
     - name: Build the Docker image
       run: docker build --file docker/Dockerfile -t angio docker/
     - name: Run a short test
-      run: docker run -it -v $(pwd):/code angio /bin/bash run.sh 001
+      run: docker run -v $(pwd):/code angio /bin/bash run.sh 001
