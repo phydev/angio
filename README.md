@@ -1,3 +1,7 @@
+![build status](https://github.com/phydev/angio/actions/workflows/docker-image.yml/badge.svg)
+
+----
+
 ## Angiogenesis Project
 This project is hosted by the [CFisUC](http://cfisuc.fis.uc.pt/) at the [University of Coimbra](www.uc.pt) 
 and consists in a phase-field model for tumor angiogenesis. The model is based on the paper published by
@@ -15,6 +19,12 @@ and consists in a phase-field model for tumor angiogenesis. The model is based o
 ```docker build --platform linux/x86_64 -t angio docker/``` (the ```--platform``` flag is necessary for the image to run on Apple Silicon)
 2. Run the container:
 ```docker run -it -v $(pwd):/code angio /bin/bash run.sh <run_id>```. Please make sure that an input file named ```inp<run_id>``` is present in the root directory of the project.
+
+### Parameters
+
+We provide typical parameters for simulations in [`input_file`](https://github.com/phydev/angio/blob/master/input_file). 
+
+Beware that the input file `inp001` is solely used to run the docker image with Github actions. The parameters were changed to produce a short simulation with small grid, few iterations, and no sources of VEGF. Please do __not__ base future studies on this file. 
 
 ### Publications:
 M. Moreira-Soares, R. Coimbra, L. Rebelo, J. Carvalho & R. D. M. Travasso. [Angiogenic Factors produced by Hypoxic Cells are a leading driver of Anastomoses in Sprouting Angiogenesis–a computational study](https://www.nature.com/articles/s41598-018-27034-8). Scientific Reports 8, 8726 (2018)
