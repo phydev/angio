@@ -1,8 +1,8 @@
 title: Angio Project
 description: Developing a 3D phase-field model for tumor angiogenesis
 google_analytics: 
-show_downloads: true
-theme: minimal-mistakes-jekyll
+show_downloads: true 
+remote_theme: "mmistakes/minimal-mistakes@4.24.0
 
 gems:
-  - jekyll-mentions
+  - Gemfile
