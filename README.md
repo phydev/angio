@@ -41,6 +41,6 @@ M. Moreira-Soares, R. Coimbra, L. Rebelo, J. Carvalho & R. D. M. Travasso. [Angi
 
 ### Acknoledgements
 
-Special thanks to (João Simões)[https://github.com/joaoplay] for supporting the long term reproducibility of this code by dockerizing the repository. 
+Special thanks to [João Simões](https://github.com/joaoplay) for supporting the long term reproducibility of this code by dockerizing the repository. 
 
 This project was funded by the National Council of Technological and Scientific Development (CNPq - Brazil) under the grant 235101/2014-1. 
