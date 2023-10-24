@@ -39,7 +39,7 @@ M. Moreira-Soares, R. Coimbra, L. Rebelo, J. Carvalho & R. D. M. Travasso. [Angi
 
 ![alt tag](https://moreirasm.files.wordpress.com/2018/06/300ms.gif?w=364&h=335)
 
-### Acknoledgements
+### Acknowledgements
 
 Special thanks to [João Simões](https://github.com/joaoplay) for supporting the long term reproducibility of this code by dockerizing the repository. 
 
